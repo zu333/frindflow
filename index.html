@@ -355,6 +355,15 @@ const DEFAULT_POSTS = [
         isLiked: false,
     },
 ];
+const normalizePost = (post) => ({
+    ...post,
+    images: Array.isArray(post?.images) ? post.images : [],
+    likesCount: Number.isFinite(Number(post?.likesCount)) ? Number(post.likesCount) : 0,
+    commentsCount: Number.isFinite(Number(post?.commentsCount)) ? Number(post.commentsCount) : 0,
+    sharesCount: Number.isFinite(Number(post?.sharesCount)) ? Number(post.sharesCount) : 0,
+    isLiked: Boolean(post?.isLiked),
+    time: post?.time || 'Just now'
+});
 const getDeletedPostIds = () => {
     try {
         return JSON.parse(localStorage.getItem('lp_deleted_post_ids') || '[]');
@@ -390,10 +399,10 @@ const getInitialPosts = () => {
         const deleted = getDeletedPostIds();
         const stored = localStorage.getItem('lp_local_posts_v2');
         let list = stored ? JSON.parse(stored) : DEFAULT_POSTS;
-        return list.filter((p) => !deleted.includes(p.id));
+        return list.map(normalizePost).filter((p) => !deleted.includes(p.id));
     }
     catch (e) {
-        return DEFAULT_POSTS.filter((p) => !getDeletedPostIds().includes(p.id));
+        return DEFAULT_POSTS.map(normalizePost).filter((p) => !getDeletedPostIds().includes(p.id));
     }
 };
 const LP_FIREBASE_CONFIG = {
@@ -947,7 +956,7 @@ function App() {
     useEffect(() => {
         if (!window.LP_FIREBASE?.db) return;
         const unsubscribePosts = window.LP_FIREBASE.db.collection('posts').onSnapshot((snapshot) => {
-            const remote = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            const remote = snapshot.docs.map((doc) => normalizePost({ id: doc.id, ...doc.data() }));
             if (remote.length) {
                 remote.sort((a, b) => {
                     const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : Number(a.createdAt || 0);
@@ -957,7 +966,7 @@ function App() {
                 setPosts((prev) => {
                     const byId = new Map(prev.map((p) => [p.id, p]));
                     remote.forEach((p) => byId.set(p.id, { ...byId.get(p.id), ...p, time: p.time || 'Just now' }));
-                    return Array.from(byId.values()).sort((a, b) => {
+                    return Array.from(byId.values()).map(normalizePost).sort((a, b) => {
                         const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : Number(a.createdAt || 0);
                         const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : Number(b.createdAt || 0);
                         return tb - ta;
@@ -1001,7 +1010,7 @@ function App() {
                     setPhotosList(JSON.parse(storedPhotos));
                 const storedPosts = localStorage.getItem('lp_local_posts_v2');
                 if (storedPosts)
-                    setPosts(JSON.parse(storedPosts));
+                    setPosts(JSON.parse(storedPosts).map(normalizePost));
             }
             catch (e) {
                 console.warn('Local storage sync error:', e);
@@ -2905,6 +2914,13 @@ function App() {
                     React.createElement("span", { className: "iconify text-lp", "data-icon": "mdi:aspect-ratio", "data-width": "16" }),
                     React.createElement("span", null, "Image fitted to window (Click outside or \u2715 to close)")))))));
 }
+window.addEventListener('error', (event) => {
+    console.error('Friend Flow runtime error:', event.error || event.message);
+});
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Friend Flow unhandled promise rejection:', event.reason);
+});
+
 class ErrorBoundary extends React.Component {
     constructor(props) { super(props); this.state = { hasError: false }; }
     static getDerivedStateFromError() { return { hasError: true }; }
