@@ -1250,6 +1250,11 @@ function App() {
     };
     // Upload Images for Feed Post with Content Safety Protection
     const handleImageUploadFiles = async (files) => {
+        if (!userProfile.isLoggedIn || !window.LP_FIREBASE?.auth?.currentUser) {
+            setIsSignUpModalOpen(true);
+            showToast('Please Sign In before uploading images.', 'info');
+            return;
+        }
         if (!files)
             return;
         const newImages = [];
@@ -1282,6 +1287,11 @@ function App() {
     };
     // Upload Photos in Photo Tab with Content Safety Protection & Public/Private assignment
     const handlePhotoTabFiles = async (files) => {
+        if (!userProfile.isLoggedIn || !window.LP_FIREBASE?.auth?.currentUser) {
+            setIsSignUpModalOpen(true);
+            showToast('Please Sign In before uploading photos.', 'info');
+            return;
+        }
         if (!files)
             return;
         const newPhotos = [];
@@ -1945,13 +1955,14 @@ function App() {
                         React.createElement("button", { type: "button", onClick: () => setEditingPostId(null), className: "px-4 py-2 rounded-xl text-xs font-bold theme-text2 hover:bg-lp/10" }, "Cancel"),
                         React.createElement("button", { onClick: handleSavePostTextByAdmin, className: "bg-lp text-white text-xs font-bold px-5 py-2 rounded-xl hover:bg-lp-light transition-all shadow-md" }, "Update Post")))))),
         React.createElement("header", { className: "fixed top-0 left-0 right-0 z-50 theme-card/95 backdrop-blur-xl border-b theme-border theme-shadow" },
-            React.createElement("div", { className: "flex items-center justify-between h-14 px-2 sm:px-4" },
+            React.createElement("div", { className: "flex items-center justify-between h-16 px-3 sm:px-5" },
                 React.createElement("div", { className: "flex items-center gap-2 sm:gap-3 flex-1 min-w-0" },
                     React.createElement("div", { className: "flex items-center gap-1.5 cursor-pointer select-none flex-shrink-0", onClick: handleLogoClick },
                         React.createElement("div", { className: "w-8 h-8 sm:w-9 sm:h-9 bg-lp rounded-xl flex items-center justify-center glow-lp relative" },
                             React.createElement("span", { className: "text-white font-bold text-xs sm:text-sm" }, "FF"),
                             React.createElement("span", { className: "iconify absolute -bottom-1 -right-1 rounded-full border border-black/40 shadow-sm", "data-icon": "circle-flags:pk", "data-width": "12", title: "Pakistan Flag" })),
                         React.createElement("span", { className: "iconify rounded-full border border-black/30 hidden sm:inline-block", "data-icon": "circle-flags:pk", "data-width": "16", title: "Pakistan Flag" })),
+                        React.createElement("span", { className: "hidden sm:inline font-extrabold text-sm tracking-tight theme-text1 whitespace-nowrap" }, "Friend Flow"),
                     React.createElement("div", { className: "relative flex-1 max-w-[200px] sm:max-w-xs" },
                         React.createElement("input", { type: "text", placeholder: "Search", className: "w-full theme-surface border theme-border rounded-full pl-8 sm:pl-10 pr-3 py-1.5 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:border-lp focus:ring-1 focus:ring-lp/30 transition-all" }),
                         React.createElement("span", { className: "iconify absolute left-2.5 top-1/2 -translate-y-1/2 theme-text3", "data-icon": "mdi:magnify", "data-width": "16" }))),
@@ -2005,15 +2016,15 @@ function App() {
                             React.createElement("div", { className: "pt-2 border-t theme-border" },
                                 React.createElement("button", { onClick: handleLogout, className: "w-full text-left px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all flex items-center gap-2 cursor-pointer" },
                                     React.createElement("span", { className: "iconify", "data-icon": "mdi:logout", "data-width": "16" }),
-                                    React.createElement("span", null, "Logout / Exit Account"))))))) : (React.createElement("button", { onClick: () => setIsSignUpModalOpen(true), className: "bg-lp text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-lp-light transition-all flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer", title: "Sign Up / Sign In" },
+                                    React.createElement("span", null, "Logout / Exit Account"))))))) : (React.createElement("button", { onClick: () => setIsSignUpModalOpen(true), style: { backgroundColor: "#EE8208", color: "#FFFFFF" }, className: "min-w-[132px] sm:min-w-[148px] justify-center bg-lp text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-lp-light transition-all flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer", title: "Sign In / Join" },
                         React.createElement("span", { className: "iconify", "data-icon": "mdi:account-plus", "data-width": "16" }),
                         React.createElement("span", null, "Sign Up / Sign In")))))),
-        isAnnouncementActive && systemAnnouncement && (React.createElement("div", { className: "fixed top-14 left-0 right-0 z-40 bg-gradient-to-r from-lp to-emerald-700 text-white text-xs font-semibold px-4 py-2 flex items-center justify-between shadow-md" },
+        isAnnouncementActive && systemAnnouncement && (React.createElement("div", { className: "fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-lp to-emerald-700 text-white text-xs font-semibold px-4 py-2 flex items-center justify-between shadow-md" },
             React.createElement("div", { className: "flex items-center gap-2 max-w-4xl mx-auto flex-1 min-w-0" },
                 React.createElement("span", { className: "iconify text-yellow-300 flex-shrink-0 animate-pulse", "data-icon": "mdi:bullhorn-outline", "data-width": "18" }),
                 React.createElement("span", { className: "truncate" }, systemAnnouncement)),
             React.createElement("button", { onClick: () => setIsAnnouncementActive(false), className: "hover:opacity-80 text-white/80 hover:text-white text-xs ml-2 cursor-pointer p-1", title: "Dismiss Announcement" }, "\u2715"))),
-        React.createElement("div", { className: `flex ${isAnnouncementActive && systemAnnouncement ? 'pt-22' : 'pt-14'}` },
+        React.createElement("div", { className: `flex ${isAnnouncementActive && systemAnnouncement ? 'pt-[104px]' : 'pt-16'}` },
             React.createElement("aside", { className: "hidden md:block fixed left-0 top-14 bottom-0 w-56 theme-bg border-r theme-border overflow-y-auto z-40" },
                 React.createElement("nav", { className: "py-3" },
                     React.createElement("div", { className: "px-4 py-2 text-[10px] theme-text3 uppercase tracking-widest font-bold" }, "Main"),
@@ -2089,78 +2100,83 @@ function App() {
                 activeTab === 'feed' && (React.createElement("div", { className: "max-w-[1020px] mx-auto px-4 py-5 flex flex-col lg:flex-row gap-6 items-start justify-center" },
                     React.createElement("div", { className: "w-full lg:max-w-[640px] flex-1 min-w-0" },
                         React.createElement("div", { className: "theme-card rounded-2xl border theme-border theme-shadow p-4 mb-5" },
-                            React.createElement("div", { className: "flex items-center gap-3 mb-3" },
-                                React.createElement("img", { src: userProfile.avatar, className: "w-10 h-10 rounded-full border-2 border-lp/30 object-cover", alt: userProfile.name }),
-                                React.createElement("input", { type: "text", placeholder: userProfile.isLoggedIn ? "What's on your mind?" : "Sign in to create a post...", readOnly: true, onClick: () => {
-                                    if (!userProfile.isLoggedIn || !window.LP_FIREBASE?.auth?.currentUser) {
-                                        setIsSignUpModalOpen(true);
-                                        showToast('Please Sign Up / Sign In to create a post.', 'info');
-                                        return;
-                                    }
-                                    setIsPostCreatorOpen(true);
-                                }, className: "flex-1 theme-surface border theme-border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 transition-colors cursor-pointer" })),
-                            isPostCreatorOpen && (React.createElement("div", null,
-                                React.createElement("textarea", { placeholder: "Write your post...", rows: 3, value: postText, onChange: (e) => setPostText(e.target.value), className: "w-full theme-surface border theme-border rounded-xl px-4 py-3 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 resize-none mb-3", autoFocus: true }),
-                                uploadedImages.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-2 mb-3" }, uploadedImages.map((img, idx) => (React.createElement("div", { key: idx, className: "image-preview-container relative bg-black/5 dark:bg-white/5 p-1 rounded-xl border theme-border" },
-                                    React.createElement("img", { src: img.dataUrl, className: "h-28 max-w-full w-auto rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity", onClick: () => setLightboxImage(img.dataUrl), alt: img.name, title: "Click to view full image in window" }),
-                                    React.createElement("div", { className: "remove-btn", onClick: () => removeUploadedImage(idx) }, "\u2715"),
-                                    React.createElement("div", { className: "absolute bottom-1 left-1 text-[9px] bg-black/70 text-white px-1.5 py-0.5 rounded font-mono" },
-                                        img.width,
-                                        "\u00D7",
-                                        img.height)))))),
-                                currentLink && (React.createElement("div", { className: "mb-3" },
-                                    React.createElement("div", { className: "link-preview flex items-center gap-3 p-3" },
-                                        React.createElement("div", { className: "w-10 h-10 bg-lp/10 rounded-lg flex items-center justify-center flex-shrink-0" },
-                                            React.createElement("span", { className: "iconify text-lp", "data-icon": "mdi:web", "data-width": "20" })),
-                                        React.createElement("div", { className: "flex-1 min-w-0" },
-                                            React.createElement("div", { className: "text-sm font-medium truncate" }, currentLink.title),
-                                            React.createElement("div", { className: "text-xs theme-text3 truncate" }, currentLink.url)),
-                                        React.createElement("button", { onClick: removeLink, className: "theme-text2 hover:text-red-500 flex-shrink-0" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:close-circle", "data-width": "18" }))))),
-                                isLinkInputOpen && (React.createElement("div", { className: "mb-3" },
-                                    React.createElement("div", { className: "flex gap-2" },
-                                        React.createElement("input", { type: "url", placeholder: "https://example.com", value: linkUrlInput, onChange: (e) => setLinkUrlInput(e.target.value), className: "flex-1 theme-surface border theme-border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50" }),
-                                        React.createElement("input", { type: "text", placeholder: "Link title", value: linkTitleInput, onChange: (e) => setLinkTitleInput(e.target.value), className: "flex-1 theme-surface border theme-border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50" }),
-                                        React.createElement("button", { onClick: addLink, className: "bg-lp text-white text-xs font-bold px-4 rounded-lg hover:bg-lp-light transition-colors" }, "Add"),
-                                        React.createElement("button", { onClick: () => setIsLinkInputOpen(false), className: "theme-text2 text-xs px-3 rounded-lg theme-hover border theme-border" }, "\u2715")))),
-                                React.createElement("div", { className: "flex items-center gap-2 mb-3" },
-                                    React.createElement("span", { className: "text-xs theme-text2" }, "Visibility:"),
-                                    React.createElement("div", { className: "flex gap-1" },
-                                        React.createElement("button", { onClick: () => setPostPrivacy('public'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'public' ? 'active-p' : 'theme-text2'}` },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:earth", "data-width": "14" }),
-                                            " Public"),
-                                        React.createElement("button", { onClick: () => setPostPrivacy('friends'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'friends' ? 'active-p' : 'theme-text2'}` },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:account-group", "data-width": "14" }),
-                                            " Friends"),
-                                        React.createElement("button", { onClick: () => setPostPrivacy('private'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'private' ? 'active-p' : 'theme-text2'}` },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:lock", "data-width": "14" }),
-                                            " Private"))),
-                                React.createElement("div", { className: "flex items-center justify-between" },
-                                    React.createElement("div", { className: "flex gap-2" },
-                                        React.createElement("button", { onClick: () => imageUploadInputRef.current?.click(), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:image-plus", "data-width": "16" }),
-                                            " Image"),
-                                        React.createElement("button", { onClick: () => setIsLinkInputOpen(true), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:link-variant-plus", "data-width": "16" }),
-                                            " Link"),
-                                        React.createElement("button", { className: "flex items-center gap-1.5 text-xs text-lp px-3 py-1.5 rounded-lg bg-lp/10" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:format-text", "data-width": "16" }),
-                                            " Text")),
-                                    React.createElement("button", { onClick: handleCreatePost, className: "bg-lp text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-lp-light transition-colors active:scale-95" }, "Post")))),
-                            !isPostCreatorOpen && userProfile.isLoggedIn && (React.createElement("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t theme-border" },
-                                React.createElement("button", { onClick: () => imageUploadInputRef.current?.click(), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
-                                    React.createElement("span", { className: "iconify", "data-icon": "mdi:image-plus", "data-width": "16" }),
-                                    " Image"),
-                                React.createElement("button", { onClick: () => showComingSoon('Video Post'), className: "flex items-center gap-1.5 text-xs theme-text3 px-3 py-1.5 rounded-lg relative" },
-                                    React.createElement("span", { className: "iconify", "data-icon": "mdi:play-circle-outline", "data-width": "16" }),
-                                    " Video",
-                                    React.createElement("span", { className: "absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" })),
-                                React.createElement("button", { onClick: () => {
-                                        setIsPostCreatorOpen(true);
-                                        setIsLinkInputOpen(true);
-                                    }, className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
-                                    React.createElement("span", { className: "iconify", "data-icon": "mdi:link-variant", "data-width": "16" }),
-                                    " Link")))),
+                            userProfile.isLoggedIn ? (React.createElement(React.Fragment, null,
+                                React.createElement("div", { className: "flex items-center gap-3 mb-3" },
+                                    React.createElement("img", { src: userProfile.avatar, className: "w-10 h-10 rounded-full border-2 border-lp/30 object-cover flex-shrink-0", alt: userProfile.name }),
+                                    React.createElement("button", { type: "button", onClick: () => setIsPostCreatorOpen(true), className: "flex-1 min-w-0 text-left theme-surface border theme-border rounded-full px-4 py-2.5 text-sm theme-text2 hover:border-lp/50 hover:bg-lp/5 transition-all cursor-pointer" },
+                                        "What's on your mind?")),
+                                isPostCreatorOpen && (React.createElement("div", null,
+                                    React.createElement("textarea", { placeholder: "Write your post...", rows: 3, value: postText, onChange: (e) => setPostText(e.target.value), className: "w-full theme-surface border theme-border rounded-xl px-4 py-3 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 resize-none mb-3", autoFocus: true }),
+                                    uploadedImages.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-2 mb-3" }, uploadedImages.map((img, idx) => (React.createElement("div", { key: idx, className: "image-preview-container relative bg-black/5 dark:bg-white/5 p-1 rounded-xl border theme-border" },
+                                        React.createElement("img", { src: img.dataUrl, className: "h-28 max-w-full w-auto rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity", onClick: () => setLightboxImage(img.dataUrl), alt: img.name, title: "Click to view full image in window" }),
+                                        React.createElement("div", { className: "remove-btn", onClick: () => removeUploadedImage(idx) }, "\u2715"),
+                                        React.createElement("div", { className: "absolute bottom-1 left-1 text-[9px] bg-black/70 text-white px-1.5 py-0.5 rounded font-mono" },
+                                            img.width,
+                                            "\u00D7",
+                                            img.height)))))),
+                                    currentLink && (React.createElement("div", { className: "mb-3" },
+                                        React.createElement("div", { className: "link-preview flex items-center gap-3 p-3" },
+                                            React.createElement("div", { className: "w-10 h-10 bg-lp/10 rounded-lg flex items-center justify-center flex-shrink-0" },
+                                                React.createElement("span", { className: "iconify text-lp", "data-icon": "mdi:web", "data-width": "20" })),
+                                            React.createElement("div", { className: "flex-1 min-w-0" },
+                                                React.createElement("div", { className: "text-sm font-medium truncate" }, currentLink.title),
+                                                React.createElement("div", { className: "text-xs theme-text3 truncate" }, currentLink.url)),
+                                            React.createElement("button", { onClick: removeLink, className: "theme-text2 hover:text-red-500 flex-shrink-0" },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:close-circle", "data-width": "18" }))))),
+                                    isLinkInputOpen && (React.createElement("div", { className: "mb-3" },
+                                        React.createElement("div", { className: "flex flex-col sm:flex-row gap-2" },
+                                            React.createElement("input", { type: "url", placeholder: "https://example.com", value: linkUrlInput, onChange: (e) => setLinkUrlInput(e.target.value), className: "flex-1 theme-surface border theme-border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50" }),
+                                            React.createElement("input", { type: "text", placeholder: "Link title", value: linkTitleInput, onChange: (e) => setLinkTitleInput(e.target.value), className: "flex-1 theme-surface border theme-border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50" }),
+                                            React.createElement("button", { onClick: addLink, className: "bg-lp text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-lp-light transition-colors" }, "Add"),
+                                            React.createElement("button", { onClick: () => setIsLinkInputOpen(false), className: "theme-text2 text-xs px-3 py-2 rounded-lg theme-hover border theme-border" }, "\u2715")))),
+                                    React.createElement("div", { className: "flex flex-wrap items-center gap-2 mb-3" },
+                                        React.createElement("span", { className: "text-xs theme-text2 mr-1" }, "Visibility:"),
+                                        React.createElement("div", { className: "flex flex-wrap gap-1" },
+                                            React.createElement("button", { onClick: () => setPostPrivacy('public'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'public' ? 'active-p' : 'theme-text2'}` },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:earth", "data-width": "14" }),
+                                                " Public"),
+                                            React.createElement("button", { onClick: () => setPostPrivacy('friends'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'friends' ? 'active-p' : 'theme-text2'}` },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:account-group", "data-width": "14" }),
+                                                " Friends"),
+                                            React.createElement("button", { onClick: () => setPostPrivacy('private'), className: `privacy-btn text-xs border theme-border px-3 py-1 rounded-lg flex items-center gap-1 ${postPrivacy === 'private' ? 'active-p' : 'theme-text2'}` },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:lock", "data-width": "14" }),
+                                                " Private"))),
+                                    React.createElement("div", { className: "flex items-center justify-between gap-3" },
+                                        React.createElement("div", { className: "flex flex-wrap gap-1" },
+                                            React.createElement("button", { onClick: () => imageUploadInputRef.current?.click(), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:image-plus", "data-width": "16" }),
+                                                " Image"),
+                                            React.createElement("button", { onClick: () => setIsLinkInputOpen(true), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:link-variant-plus", "data-width": "16" }),
+                                                " Link"),
+                                            React.createElement("button", { className: "flex items-center gap-1.5 text-xs text-lp px-3 py-1.5 rounded-lg bg-lp/10" },
+                                                React.createElement("span", { className: "iconify", "data-icon": "mdi:format-text", "data-width": "16" }),
+                                                " Text")),
+                                        React.createElement("button", { onClick: handleCreatePost, style: { backgroundColor: '#EE8208', color: '#FFFFFF' }, className: "shrink-0 text-white text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all shadow-md active:scale-95" }, "Post")))),
+                                !isPostCreatorOpen && (React.createElement("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t theme-border" },
+                                    React.createElement("button", { onClick: () => imageUploadInputRef.current?.click(), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
+                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:image-plus", "data-width": "16" }),
+                                        " Image"),
+                                    React.createElement("button", { onClick: () => showComingSoon('Video Post'), className: "flex items-center gap-1.5 text-xs theme-text3 hover:text-lp transition-colors px-3 py-1.5 rounded-lg relative" },
+                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:play-circle-outline", "data-width": "16" }),
+                                        " Video",
+                                        React.createElement("span", { className: "absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" })),
+                                    React.createElement("button", { onClick: () => {
+                                            setIsPostCreatorOpen(true);
+                                            setIsLinkInputOpen(true);
+                                        }, className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
+                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:link-variant", "data-width": "16" }),
+                                        " Link"))))) :
+                            React.createElement("div", { className: "flex items-center gap-3 rounded-xl border border-lp/20 bg-lp/5 p-3 sm:p-4" },
+                                React.createElement("div", { className: "w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm", style: { backgroundColor: '#EE8208' } },
+                                    React.createElement("span", { className: "iconify text-white", "data-icon": "mdi:lock-outline", "data-width": "21" })),
+                                React.createElement("div", { className: "flex-1 min-w-0" },
+                                    React.createElement("div", { className: "text-sm font-bold theme-text1" }, "Ready to share?"),
+                                    React.createElement("div", { className: "text-xs theme-text2 mt-0.5" }, "Sign in to create posts, share photos, and add links.")),
+                                React.createElement("button", { onClick: () => setIsSignUpModalOpen(true), style: { backgroundColor: '#EE8208', color: '#FFFFFF' }, className: "shrink-0 inline-flex items-center justify-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:opacity-90 transition-all active:scale-95" },
+                                    React.createElement("span", { className: "iconify", "data-icon": "mdi:login", "data-width": "15" }),
+                                    " Sign In"))),
+
                         React.createElement("div", null, posts.map((post) => {
                             const effectiveLink = post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : null);
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
