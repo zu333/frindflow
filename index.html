@@ -1352,6 +1352,13 @@ function App() {
     };
     // Create Post
     const handleCreatePost = async () => {
+        // Posting requires a real Firebase-authenticated user. Guests may browse only.
+        if (!userProfile.isLoggedIn || !window.LP_FIREBASE?.auth?.currentUser) {
+            setIsPostCreatorOpen(false);
+            setIsSignUpModalOpen(true);
+            showToast('Please Sign Up / Sign In before creating a post.', 'info');
+            return;
+        }
         const text = postText.trim();
         const hasImages = uploadedImages.length > 0;
         let finalLink = currentLink ? { ...currentLink } : null;
@@ -2084,7 +2091,14 @@ function App() {
                         React.createElement("div", { className: "theme-card rounded-2xl border theme-border theme-shadow p-4 mb-5" },
                             React.createElement("div", { className: "flex items-center gap-3 mb-3" },
                                 React.createElement("img", { src: userProfile.avatar, className: "w-10 h-10 rounded-full border-2 border-lp/30 object-cover", alt: userProfile.name }),
-                                React.createElement("input", { type: "text", placeholder: "What's on your mind?", readOnly: true, onClick: () => setIsPostCreatorOpen(true), className: "flex-1 theme-surface border theme-border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 transition-colors cursor-pointer" })),
+                                React.createElement("input", { type: "text", placeholder: userProfile.isLoggedIn ? "What's on your mind?" : "Sign in to create a post...", readOnly: true, onClick: () => {
+                                    if (!userProfile.isLoggedIn || !window.LP_FIREBASE?.auth?.currentUser) {
+                                        setIsSignUpModalOpen(true);
+                                        showToast('Please Sign Up / Sign In to create a post.', 'info');
+                                        return;
+                                    }
+                                    setIsPostCreatorOpen(true);
+                                }, className: "flex-1 theme-surface border theme-border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 transition-colors cursor-pointer" })),
                             isPostCreatorOpen && (React.createElement("div", null,
                                 React.createElement("textarea", { placeholder: "Write your post...", rows: 3, value: postText, onChange: (e) => setPostText(e.target.value), className: "w-full theme-surface border theme-border rounded-xl px-4 py-3 text-sm placeholder-gray-400 focus:outline-none focus:border-lp/50 resize-none mb-3", autoFocus: true }),
                                 uploadedImages.length > 0 && (React.createElement("div", { className: "flex flex-wrap gap-2 mb-3" }, uploadedImages.map((img, idx) => (React.createElement("div", { key: idx, className: "image-preview-container relative bg-black/5 dark:bg-white/5 p-1 rounded-xl border theme-border" },
@@ -2133,7 +2147,7 @@ function App() {
                                             React.createElement("span", { className: "iconify", "data-icon": "mdi:format-text", "data-width": "16" }),
                                             " Text")),
                                     React.createElement("button", { onClick: handleCreatePost, className: "bg-lp text-white text-sm font-bold px-5 py-2 rounded-xl hover:bg-lp-light transition-colors active:scale-95" }, "Post")))),
-                            !isPostCreatorOpen && (React.createElement("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t theme-border" },
+                            !isPostCreatorOpen && userProfile.isLoggedIn && (React.createElement("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t theme-border" },
                                 React.createElement("button", { onClick: () => imageUploadInputRef.current?.click(), className: "flex items-center gap-1.5 text-xs theme-text2 hover:text-lp transition-colors px-3 py-1.5 rounded-lg hover:bg-lp/10" },
                                     React.createElement("span", { className: "iconify", "data-icon": "mdi:image-plus", "data-width": "16" }),
                                     " Image"),
