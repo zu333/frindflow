@@ -445,6 +445,7 @@ const DEFAULT_POSTS = [
 ];
 const normalizePost = (post) => ({
     ...post,
+    link: post?.link || ((post?.linkUrl || post?.websiteUrl || post?.targetUrl) ? { url: post.linkUrl || post.websiteUrl || post.targetUrl, title: post.linkTitle || post.linkUrl || post.websiteUrl || post.targetUrl } : null),
     images: Array.isArray(post?.images) ? post.images : [],
     likesCount: Number.isFinite(Number(post?.likesCount)) ? Number(post.likesCount) : 0,
     commentsCount: Number.isFinite(Number(post?.commentsCount)) ? Number(post.commentsCount) : 0,
@@ -1510,7 +1511,13 @@ function App() {
         }
         const text = postText.trim();
         const hasImages = uploadedImages.length > 0;
+        // Use the verified link, and also accept a URL still present in the Link input.
+        // This prevents a link from being lost if the user typed it but did not press Add.
         let finalLink = currentLink ? { ...currentLink } : null;
+        if (!finalLink && linkUrlInput.trim()) {
+            const typedUrl = normalizeUrlForSafety(linkUrlInput.trim());
+            if (typedUrl) finalLink = { url: typedUrl, title: linkTitleInput.trim() || typedUrl };
+        }
         // Normalize and re-check attached links at publish time so a blocked link cannot bypass the Add button.
         if (finalLink) {
             const safeUrl = normalizeUrlForSafety(finalLink.url);
@@ -1581,6 +1588,10 @@ function App() {
             text: text,
             images: [...uploadedImages],
             link: finalLink,
+            // Also store flat link fields for backwards compatibility and reliable rendering.
+            linkUrl: finalLink?.url || '',
+            websiteUrl: finalLink?.url || '',
+            linkTitle: finalLink?.title || '',
             likesCount: 0,
             commentsCount: 0,
             isLiked: false,
