@@ -128,6 +128,38 @@ const ADMIN_PASSWORD = 'lahore799';
 const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 900;
 const QUALITY = 0.8;
+// Cloudinary image storage
+const CLOUDINARY_CLOUD_NAME = 'y1nrdlzf';
+const CLOUDINARY_UPLOAD_PRESET = 'frendsflow';
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+const uploadToCloudinary = async (dataUrl, originalName = 'friendflow-image.jpg') => {
+    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            file: dataUrl,
+            upload_preset: CLOUDINARY_UPLOAD_PRESET,
+            folder: 'friendflow/images',
+            use_filename: false,
+            unique_filename: true,
+            context: `original_name=${String(originalName).replace(/[|=]/g, '_')}`
+        })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.secure_url) {
+        throw new Error(result?.error?.message || 'Cloudinary upload failed.');
+    }
+    return {
+        url: result.secure_url,
+        publicId: result.public_id || '',
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        bytes: result.bytes
+    };
+};
+
 // Moderation Safety Filters
 const FORBIDDEN_IMAGE_KEYWORDS = [
     'nsfw', 'adult', 'nude', 'naked', 'porn', 'xxx', 'gandi', 'dirty', 'explicit',
@@ -1271,7 +1303,13 @@ function App() {
                 continue;
             }
             const res = await resizeImage(file);
-            newImages.push(res);
+            try {
+                const uploaded = await uploadToCloudinary(res.dataUrl, file.name);
+                newImages.push({ ...res, dataUrl: uploaded.url, url: uploaded.url, cloudinary: true, publicId: uploaded.publicId });
+            } catch (uploadError) {
+                console.error('Cloudinary image upload failed:', uploadError);
+                showToast(`Cloudinary upload failed for ${file.name}: ${uploadError.message}`, 'error');
+            }
         }
         if (newImages.length > 0) {
             setUploadedImages((prev) => [...prev, ...newImages]);
@@ -1308,13 +1346,25 @@ function App() {
                 continue;
             }
             const res = await resizeImage(file);
-            newPhotos.push({
-                id: String(Date.now() + Math.random()),
-                dataUrl: res.dataUrl,
-                name: res.name,
-                privacy: photoUploadPrivacy,
-                uploadTime: 'Just now',
-            });
+            try {
+                const uploaded = await uploadToCloudinary(res.dataUrl, file.name);
+                newPhotos.push({
+                    id: String(Date.now() + Math.random()),
+                    dataUrl: uploaded.url,
+                    url: uploaded.url,
+                    name: res.name,
+                    privacy: photoUploadPrivacy,
+                    uploadTime: 'Just now',
+                    cloudinary: true,
+                    publicId: uploaded.publicId,
+                    width: uploaded.width,
+                    height: uploaded.height,
+                    bytes: uploaded.bytes
+                });
+            } catch (uploadError) {
+                console.error('Cloudinary photo upload failed:', uploadError);
+                showToast(`Cloudinary upload failed for ${file.name}: ${uploadError.message}`, 'error');
+            }
         }
         if (newPhotos.length > 0) {
             setPhotosList((prev) => [...newPhotos, ...prev]);
