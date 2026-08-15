@@ -443,8 +443,16 @@ const DEFAULT_POSTS = [
         isLiked: false,
     },
 ];
+const getPostLinkUrl = (post) => {
+    const candidate = post?.link?.url || post?.link?.href || (typeof post?.link === 'string' ? post.link : '') || post?.linkUrl || post?.websiteUrl || post?.url || (post?.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '');
+    return normalizeUrlForSafety(candidate);
+};
 const normalizePost = (post) => ({
     ...post,
+    link: (() => {
+        const url = getPostLinkUrl(post);
+        return url ? { url, title: post?.link?.title || post?.linkTitle || url } : (post?.link || null);
+    })(),
     images: Array.isArray(post?.images) ? post.images : [],
     likesCount: Number.isFinite(Number(post?.likesCount)) ? Number(post.likesCount) : 0,
     commentsCount: Number.isFinite(Number(post?.commentsCount)) ? Number(post.commentsCount) : 0,
@@ -2340,7 +2348,7 @@ function App() {
                                     " Sign In"))),
 
                         React.createElement("div", null, posts.map((post) => {
-                            const effectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const effectiveLink = getPostLinkUrl(post) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center gap-3 mb-3" },
@@ -2543,7 +2551,7 @@ function App() {
                                 }, className: "bg-lp text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-lp-light transition-all shadow-md cursor-pointer" }, "Publish First Post \u2728"))) : (posts
                             .filter((p) => p.author === userProfile.name || p.author === 'You')
                             .map((post) => {
-                            const profileEffectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const profileEffectiveLink = getPostLinkUrl(post) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center justify-between mb-3" },
