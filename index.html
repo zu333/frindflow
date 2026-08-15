@@ -1468,12 +1468,9 @@ function App() {
             showToast('Invalid website link.', 'error');
             return;
         }
-        // Open the attached website from a direct user click. Fall back to the same tab
-        // if the browser blocks a new tab/window.
-        const popup = window.open(safeUrl, '_blank', 'noopener,noreferrer');
-        if (!popup) {
-            window.location.assign(safeUrl);
-        }
+        // Navigate directly to the attached website. Using same-tab navigation
+        // avoids popup blockers and makes the post image reliably clickable.
+        window.location.assign(safeUrl);
     };
     // Add Link Handler with Spam Protection
     const addLink = () => {
