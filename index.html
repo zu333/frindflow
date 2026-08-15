@@ -444,22 +444,18 @@ const DEFAULT_POSTS = [
     },
 ];
 const normalizePost = (post) => {
-    const rawLink = post?.link;
-    let normalizedLink = null;
-    if (typeof rawLink === 'string') {
-        const url = String(rawLink).trim();
-        if (url) normalizedLink = { url, title: url };
-    } else if (rawLink && typeof rawLink === 'object') {
-        const url = String(rawLink.url || rawLink.linkUrl || rawLink.websiteUrl || rawLink.href || '').trim();
-        if (url) normalizedLink = { ...rawLink, url, title: rawLink.title || url };
-    } else {
-        const legacyUrl = String(post?.linkUrl || post?.websiteUrl || post?.url || '').trim();
-        if (legacyUrl) normalizedLink = { url: legacyUrl, title: post?.linkTitle || legacyUrl };
-    }
+    const rawLink = typeof post?.link === 'string'
+        ? post.link
+        : post?.link?.url || post?.linkUrl || post?.websiteUrl || post?.targetUrl || post?.website?.url || post?.attachedLink?.url || '';
+    const textLink = post?.text?.match(/https?:\/\/[^\s]+/i)?.[0] || '';
+    const normalizedLink = normalizeUrlForSafety(rawLink || textLink);
+    const linkTitle = typeof post?.link === 'object' && post.link?.title
+        ? post.link.title
+        : (post?.linkTitle || post?.websiteTitle || normalizedLink || 'Visit Attached Website');
     return {
         ...post,
-        link: normalizedLink,
         images: Array.isArray(post?.images) ? post.images : [],
+        link: normalizedLink ? { url: normalizedLink, title: linkTitle } : null,
         likesCount: Number.isFinite(Number(post?.likesCount)) ? Number(post.likesCount) : 0,
         commentsCount: Number.isFinite(Number(post?.commentsCount)) ? Number(post.commentsCount) : 0,
         sharesCount: Number.isFinite(Number(post?.sharesCount)) ? Number(post.sharesCount) : 0,
@@ -2358,7 +2354,7 @@ function App() {
                                     " Sign In"))),
 
                         React.createElement("div", null, posts.map((post) => {
-                            const effectiveLink = normalizeExternalUrl(post.link?.url || post.linkUrl || post.websiteUrl || post.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const effectiveLink = normalizeExternalUrl(post?.link?.url || (typeof post?.link === 'string' ? post.link : '') || post?.linkUrl || post?.websiteUrl || post?.targetUrl || post?.website?.url || post?.attachedLink?.url || (post?.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center gap-3 mb-3" },
@@ -2561,7 +2557,7 @@ function App() {
                                 }, className: "bg-lp text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-lp-light transition-all shadow-md cursor-pointer" }, "Publish First Post \u2728"))) : (posts
                             .filter((p) => p.author === userProfile.name || p.author === 'You')
                             .map((post) => {
-                            const profileEffectiveLink = normalizeExternalUrl(post.link?.url || post.linkUrl || post.websiteUrl || post.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const profileEffectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center justify-between mb-3" },
