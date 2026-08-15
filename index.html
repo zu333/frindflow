@@ -188,9 +188,28 @@ const SPAM_PATTERNS = [
     /\.scr$/i,
     /\.bat$/i,
     /\bgandi-link\b/i,
+    /\btelegram\.(?:me|dog)\b/i,
+    /\bdiscord\.(?:gg|com)\b.*(?:free|nitro|gift|airdrop)/i,
+    /\bclaim[-_ ]?(?:gift|bonus|reward|prize)\b/i,
+    /\bfree[-_ ]?(?:money|cash|followers|likes|views)\b/i,
+    /\b(?:double|triple)[-_ ]?your[-_ ]?(?:money|crypto)\b/i,
+    /\b(?:verify|login|unlock)[-_ ]?(?:account|wallet)\b/i,
+    /\b(?:wallet|seed)[-_ ]?(?:phrase|recovery|words)\b/i,
+    /\b(?:password|otp|one[-_ ]?time[-_ ]?code)[-_ ]?(?:required|verify)\b/i,
+    /\b(?:download|install)[-_ ]?(?:app|file)\b.*\.(?:exe|apk|scr|bat|cmd|msi|zip)/i,
 ];
-const checkImageSafety = async (file) => {
-    const name = file.name.toLowerCase();
+const MAX_USER_IMAGES_PER_POST = 5;
+const MAX_IMAGE_BYTES_FOR_USERS = 8 * 1024 * 1024;
+const checkImageSafety = async (file, isAdmin = false) => {
+    // Admin is trusted and can publish content for moderation/testing.
+    if (isAdmin) return { safe: true, adminBypass: true };
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+        return { safe: false, reason: 'Only image files are allowed' };
+    }
+    if (file.size > MAX_IMAGE_BYTES_FOR_USERS) {
+        return { safe: false, reason: 'Image is larger than 8 MB' };
+    }
+    const name = String(file.name || '').toLowerCase();
     for (const kw of FORBIDDEN_IMAGE_KEYWORDS) {
         if (name.includes(kw)) {
             return { safe: false, reason: `Filename flagged (${kw})` };
@@ -227,18 +246,54 @@ const checkImageSafety = async (file) => {
     return { safe: true };
 };
 const checkSpamLink = (url, title = '') => {
-    const target = (url + ' ' + title).toLowerCase();
+    const raw = String(url || '').trim();
+    const target = (raw + ' ' + String(title || '')).toLowerCase();
+    if (!raw) return { isSpam: true, reason: 'Empty URL' };
+    if (/^(?:javascript|data|vbscript|file|blob):/i.test(raw)) {
+        return { isSpam: true, reason: 'Unsafe URL scheme is blocked' };
+    }
+    const normalized = normalizeUrlForSafety(raw);
+    if (!normalized) return { isSpam: true, reason: 'Invalid or unsafe URL' };
     for (const pattern of SPAM_PATTERNS) {
         if (pattern.test(target)) {
-            return { isSpam: true, reason: 'Contains prohibited link shortener or spam domain' };
+            return { isSpam: true, reason: 'Suspicious or spam link detected' };
         }
     }
-    const ipPattern = /^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/i;
-    if (ipPattern.test(url)) {
+    const ipPattern = /^https?:\/\/\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?(?:[\/\?#]|$)/i;
+    if (ipPattern.test(normalized)) {
         return { isSpam: true, reason: 'Raw IP address URLs are blocked for security' };
+    }
+    try {
+        const parsed = new URL(normalized);
+        const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '::1' || host.endsWith('.local')) {
+            return { isSpam: true, reason: 'Local/internal URLs are blocked' };
+        }
+        if (parsed.username || parsed.password) {
+            return { isSpam: true, reason: 'URLs containing hidden login credentials are blocked' };
+        }
+        const suspiciousQuery = /(?:redirect|url|next|target|dest|destination)=https?:/i.test(parsed.search);
+        if (suspiciousQuery && /(?:bit\.ly|tinyurl\.com|cutt\.ly|t\.co)/i.test(parsed.href)) {
+            return { isSpam: true, reason: 'Redirect/shortener URL is blocked' };
+        }
+    } catch (e) {
+        return { isSpam: true, reason: 'Invalid URL' };
     }
     return { isSpam: false };
 };
+const normalizeUrlForSafety = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const candidate = /^(https?:\/\/)/i.test(raw) ? raw : `https://${raw}`;
+    try {
+        const parsed = new URL(candidate);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+        return parsed.href;
+    } catch (e) {
+        return '';
+    }
+};
+
 const SafeAdRender = ({ html, minHeight = '140px' }) => {
     const iframeRef = useRef(null);
     useEffect(() => {
@@ -508,6 +563,8 @@ function App() {
     const [linkUrlInput, setLinkUrlInput] = useState('');
     const [linkTitleInput, setLinkTitleInput] = useState('');
     const [currentLink, setCurrentLink] = useState(null);
+    // Content moderation trust level: only the authenticated Admin session can bypass spam/image filters.
+    const isContentAdmin = Boolean(isAdminPanelOpen);
     // Modals for Policy & About Us
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [policyLang, setPolicyLang] = useState('en');
@@ -863,7 +920,7 @@ function App() {
         const file = e.target.files?.[0];
         if (!file)
             return;
-        const safety = await checkImageSafety(file);
+        const safety = await checkImageSafety(file, isContentAdmin);
         if (!safety.safe) {
             showToast('⛔ Image flagged for inappropriate content', 'error');
             return;
@@ -876,7 +933,7 @@ function App() {
         const file = e.target.files?.[0];
         if (!file)
             return;
-        const safety = await checkImageSafety(file);
+        const safety = await checkImageSafety(file, isContentAdmin);
         if (!safety.safe) {
             showToast('⛔ Image flagged for inappropriate content', 'error');
             return;
@@ -1290,6 +1347,10 @@ function App() {
         }
         if (!files)
             return;
+        if (!isContentAdmin && files.length > MAX_USER_IMAGES_PER_POST) {
+            showToast(`⛔ Maximum ${MAX_USER_IMAGES_PER_POST} images per post for members.`, 'error');
+            return;
+        }
         const newImages = [];
         let blockedCount = 0;
         for (let i = 0; i < files.length; i++) {
@@ -1297,7 +1358,7 @@ function App() {
             if (!file.type.startsWith('image/'))
                 continue;
             // Safety check for inappropriate images
-            const safety = await checkImageSafety(file);
+            const safety = await checkImageSafety(file, isContentAdmin);
             if (!safety.safe) {
                 blockedCount++;
                 showToast(`⛔ Image Blocked ("${file.name}"): Inappropriate content detected by Safety Shield!`, 'error');
@@ -1340,7 +1401,7 @@ function App() {
             if (!file.type.startsWith('image/'))
                 continue;
             // Safety check for inappropriate / explicit images ("gandi images protection")
-            const safety = await checkImageSafety(file);
+            const safety = await checkImageSafety(file, isContentAdmin);
             if (!safety.safe) {
                 blockedCount++;
                 showToast(`⛔ Image Blocked ("${file.name}"): Inappropriate content detected by Safety Shield!`, 'error');
@@ -1388,16 +1449,38 @@ function App() {
             return part;
         });
     };
+    // Normalize and safely open external post links
+    const normalizeExternalUrl = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        const candidate = /^(https?:\/\/)/i.test(raw) ? raw : `https://${raw}`;
+        try {
+            const parsed = new URL(candidate);
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+            return parsed.href;
+        } catch (e) {
+            return '';
+        }
+    };
+    const openExternalLink = (value) => {
+        const safeUrl = normalizeExternalUrl(value);
+        if (!safeUrl) {
+            showToast('Invalid website link.', 'error');
+            return;
+        }
+        window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    };
     // Add Link Handler with Spam Protection
     const addLink = () => {
-        const url = linkUrlInput.trim();
+        const rawUrl = linkUrlInput.trim();
+        const url = normalizeExternalUrl(rawUrl);
         const title = linkTitleInput.trim();
         if (!url) {
-            showToast('Please enter a URL', 'warning');
+            showToast('Please enter a valid website URL, e.g. https://example.com', 'warning');
             return;
         }
         // Anti-Spam protection check
-        const spamCheck = checkSpamLink(url, title);
+        const spamCheck = isContentAdmin ? { isSpam: false } : checkSpamLink(url, title);
         if (spamCheck.isSpam) {
             showToast(`⛔ Spam Link Blocked: ${spamCheck.reason || 'Suspicious URL detected!'}`, 'error');
             return;
@@ -1423,18 +1506,39 @@ function App() {
         const text = postText.trim();
         const hasImages = uploadedImages.length > 0;
         let finalLink = currentLink ? { ...currentLink } : null;
+        // Normalize and re-check attached links at publish time so a blocked link cannot bypass the Add button.
+        if (finalLink) {
+            const safeUrl = normalizeUrlForSafety(finalLink.url);
+            if (!safeUrl) {
+                showToast('⛔ Post blocked: invalid or unsafe attached link.', 'error');
+                return;
+            }
+            const linkCheck = isContentAdmin ? { isSpam: false } : checkSpamLink(safeUrl, finalLink.title);
+            if (linkCheck.isSpam) {
+                showToast(`⛔ Post blocked: ${linkCheck.reason}`, 'error');
+                return;
+            }
+            finalLink = { ...finalLink, url: safeUrl };
+        }
         // Auto-extract link from text if currentLink was not explicitly added
         if (!finalLink && text) {
             const urlMatch = text.match(/https?:\/\/[^\s]+/i);
             if (urlMatch) {
-                const url = urlMatch[0];
+                const url = normalizeUrlForSafety(urlMatch[0]);
                 let title = url;
                 try {
                     const parsed = new URL(url);
                     title = parsed.hostname.replace(/^www\./, '');
                 }
                 catch (e) { }
-                finalLink = { url, title };
+                if (!isContentAdmin) {
+                    const autoCheck = checkSpamLink(url, title);
+                    if (autoCheck.isSpam) {
+                        showToast(`⛔ Post blocked: text contains a suspicious link.`, 'error');
+                        return;
+                    }
+                }
+                finalLink = url ? { url, title } : null;
             }
         }
         const hasLink = finalLink !== null;
@@ -1443,17 +1547,22 @@ function App() {
             return;
         }
         // Check text for embedded spam links
-        if (text) {
-            const urlsInText = text.match(/https?:\/\/[^\s]+/gi);
+        if (text && !isContentAdmin) {
+            const urlsInText = text.match(/(?:https?:\/\/|www\.)[^\s]+/gi);
             if (urlsInText) {
-                for (const url of urlsInText) {
-                    const spamCheck = checkSpamLink(url);
+                for (const rawUrl of urlsInText) {
+                    const safeUrl = normalizeUrlForSafety(rawUrl);
+                    const spamCheck = checkSpamLink(safeUrl);
                     if (spamCheck.isSpam) {
-                        showToast(`⛔ Post Blocked: Text contains spam link (${url})`, 'error');
+                        showToast(`⛔ Post blocked: suspicious link detected.`, 'error');
                         return;
                     }
                 }
             }
+        }
+        if (!isContentAdmin && uploadedImages.length > MAX_USER_IMAGES_PER_POST) {
+            showToast(`⛔ Maximum ${MAX_USER_IMAGES_PER_POST} images per post for members.`, 'error');
+            return;
         }
         const privacyIcons = { public: 'mdi:earth', friends: 'mdi:account-group', private: 'mdi:lock' };
         const privacyLabels = { public: 'Public', friends: 'Friends', private: 'Private' };
@@ -2229,7 +2338,7 @@ function App() {
                                     " Sign In"))),
 
                         React.createElement("div", null, posts.map((post) => {
-                            const effectiveLink = post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : null);
+                            const effectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center gap-3 mb-3" },
@@ -2246,7 +2355,7 @@ function App() {
                                     post.text && (React.createElement("p", { className: "text-sm mb-3 leading-relaxed", style: { color: 'var(--text)' } }, renderFormattedPostText(post.text))),
                                     post.images.length === 1 && (React.createElement("div", { className: "rounded-2xl overflow-hidden mb-3 bg-black/5 dark:bg-white/5 border theme-border flex items-center justify-center max-h-[520px] cursor-pointer group relative shadow-sm", onClick: () => {
                                             if (effectiveLink) {
-                                                window.open(effectiveLink, '_blank');
+                                                openExternalLink(effectiveLink);
                                             }
                                             else {
                                                 setLightboxImage(post.images[0].dataUrl);
@@ -2258,7 +2367,7 @@ function App() {
                                         effectiveLink ? (React.createElement(React.Fragment, null,
                                             React.createElement("div", { className: "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/75 to-transparent p-3 pt-6 flex items-center justify-between gap-2 z-10", onClick: (e) => {
                                                     e.stopPropagation();
-                                                    window.open(effectiveLink, '_blank');
+                                                    openExternalLink(effectiveLink);
                                                 } },
                                                 React.createElement("div", { className: "flex items-center gap-2 min-w-0 text-white" },
                                                     React.createElement("div", { className: "w-8 h-8 rounded-xl bg-lp flex items-center justify-center flex-shrink-0 text-white shadow-md" },
@@ -2269,7 +2378,7 @@ function App() {
                                                 React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0" },
                                                     React.createElement("button", { onClick: (e) => {
                                                             e.stopPropagation();
-                                                            window.open(effectiveLink, '_blank');
+                                                            openExternalLink(effectiveLink);
                                                         }, className: "bg-lp hover:bg-lp-light text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1 border border-white/20 active:scale-95 cursor-pointer" },
                                                         React.createElement("span", null, "Open Site"),
                                                         React.createElement("span", { className: "iconify", "data-icon": "mdi:open-in-new", "data-width": "14" })),
@@ -2282,7 +2391,7 @@ function App() {
                                             " Fit Window")))),
                                     post.images.length > 1 && (React.createElement("div", { className: "grid grid-cols-2 gap-1.5 rounded-2xl overflow-hidden mb-3 bg-black/5 dark:bg-white/5 border theme-border p-1 relative" }, post.images.map((img, idx) => (React.createElement("div", { key: idx, className: "relative h-48 rounded-xl overflow-hidden cursor-pointer bg-black/20 group flex items-center justify-center", onClick: () => {
                                             if (effectiveLink) {
-                                                window.open(effectiveLink, '_blank');
+                                                openExternalLink(effectiveLink);
                                             }
                                             else {
                                                 setLightboxImage(img.dataUrl);
@@ -2301,7 +2410,7 @@ function App() {
                                                 }, className: "bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded border border-white/20", title: "Zoom photo" }, "Zoom"))) : (React.createElement("div", { className: "absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-medium border border-white/20" },
                                             React.createElement("span", { className: "iconify", "data-icon": "mdi:fullscreen", "data-width": "12" }),
                                             " Fit View"))))))),
-                                    effectiveLink && (React.createElement("div", { className: "link-preview mb-3 flex items-center justify-between gap-3 p-3 rounded-2xl border theme-border theme-surface hover:border-lp hover:bg-lp/5 transition-all cursor-pointer group shadow-sm", onClick: () => window.open(effectiveLink, '_blank') },
+                                    effectiveLink && (React.createElement("div", { className: "link-preview mb-3 flex items-center justify-between gap-3 p-3 rounded-2xl border theme-border theme-surface hover:border-lp hover:bg-lp/5 transition-all cursor-pointer group shadow-sm", onClick: () => openExternalLink(effectiveLink) },
                                         React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
                                             React.createElement("div", { className: "w-10 h-10 rounded-xl bg-lp/10 text-lp flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" },
                                                 React.createElement("span", { className: "iconify", "data-icon": "mdi:earth", "data-width": "22" })),
@@ -2432,7 +2541,7 @@ function App() {
                                 }, className: "bg-lp text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-lp-light transition-all shadow-md cursor-pointer" }, "Publish First Post \u2728"))) : (posts
                             .filter((p) => p.author === userProfile.name || p.author === 'You')
                             .map((post) => {
-                            const profileEffectiveLink = post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : null);
+                            const profileEffectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center justify-between mb-3" },
@@ -2453,7 +2562,7 @@ function App() {
                                     post.text && (React.createElement("p", { className: "text-sm mb-3 leading-relaxed", style: { color: 'var(--text)' } }, renderFormattedPostText(post.text))),
                                     post.images.length === 1 && (React.createElement("div", { className: "rounded-2xl overflow-hidden mb-3 bg-black/5 dark:bg-white/5 border theme-border flex items-center justify-center max-h-[480px] cursor-pointer group relative shadow-sm", onClick: () => {
                                             if (profileEffectiveLink) {
-                                                window.open(profileEffectiveLink, '_blank');
+                                                openExternalLink(profileEffectiveLink);
                                             }
                                             else {
                                                 setLightboxImage(post.images[0].dataUrl);
@@ -2462,7 +2571,7 @@ function App() {
                                         React.createElement("img", { src: post.images[0].dataUrl, className: "w-full max-h-[480px] object-contain", alt: "Post Media" }),
                                         profileEffectiveLink ? (React.createElement("div", { className: "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/75 to-transparent p-3 pt-6 flex items-center justify-between gap-2 z-10", onClick: (e) => {
                                                 e.stopPropagation();
-                                                window.open(profileEffectiveLink, '_blank');
+                                                openExternalLink(profileEffectiveLink);
                                             } },
                                             React.createElement("div", { className: "flex items-center gap-2 min-w-0 text-white" },
                                                 React.createElement("div", { className: "w-8 h-8 rounded-xl bg-lp flex items-center justify-center flex-shrink-0 text-white shadow-md" },
@@ -2473,7 +2582,7 @@ function App() {
                                             React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0" },
                                                 React.createElement("button", { onClick: (e) => {
                                                         e.stopPropagation();
-                                                        window.open(profileEffectiveLink, '_blank');
+                                                        openExternalLink(profileEffectiveLink);
                                                     }, className: "bg-lp hover:bg-lp-light text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1 border border-white/20 active:scale-95 cursor-pointer" },
                                                     React.createElement("span", null, "Open Site"),
                                                     React.createElement("span", { className: "iconify", "data-icon": "mdi:open-in-new", "data-width": "14" })),
@@ -2486,7 +2595,7 @@ function App() {
                                             " Fit Window")))),
                                     post.images.length > 1 && (React.createElement("div", { className: "grid grid-cols-2 gap-1.5 rounded-2xl overflow-hidden mb-3 bg-black/5 dark:bg-white/5 border theme-border p-1 relative" }, post.images.map((img, idx) => (React.createElement("div", { key: idx, className: "relative h-40 rounded-xl overflow-hidden cursor-pointer bg-black/20", onClick: () => {
                                             if (profileEffectiveLink) {
-                                                window.open(profileEffectiveLink, '_blank');
+                                                openExternalLink(profileEffectiveLink);
                                             }
                                             else {
                                                 setLightboxImage(img.dataUrl);
@@ -2497,7 +2606,7 @@ function App() {
                                             React.createElement("span", { className: "text-[10px] text-white font-semibold truncate flex items-center gap-1" },
                                                 React.createElement("span", { className: "iconify text-lp", "data-icon": "mdi:earth", "data-width": "12" }),
                                                 React.createElement("span", null, "Link Attached"))))))))),
-                                    profileEffectiveLink && (React.createElement("div", { className: "link-preview mb-3 flex items-center justify-between gap-3 p-3 rounded-2xl border theme-border theme-surface hover:border-lp hover:bg-lp/5 transition-all cursor-pointer group shadow-sm", onClick: () => window.open(profileEffectiveLink, '_blank') },
+                                    profileEffectiveLink && (React.createElement("div", { className: "link-preview mb-3 flex items-center justify-between gap-3 p-3 rounded-2xl border theme-border theme-surface hover:border-lp hover:bg-lp/5 transition-all cursor-pointer group shadow-sm", onClick: () => openExternalLink(profileEffectiveLink) },
                                         React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
                                             React.createElement("div", { className: "w-10 h-10 rounded-xl bg-lp/10 text-lp flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" },
                                                 React.createElement("span", { className: "iconify", "data-icon": "mdi:earth", "data-width": "22" })),
