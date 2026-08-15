@@ -134,17 +134,18 @@ const CLOUDINARY_UPLOAD_PRESET = 'frendsflow';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const uploadToCloudinary = async (dataUrl, originalName = 'friendflow-image.jpg') => {
+    // Use multipart/form-data for unsigned uploads. Do NOT send use_filename/unique_filename
+    // because this unsigned preset does not allow those parameters.
+    const formData = new FormData();
+    formData.append('file', dataUrl);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('folder', 'friendflow/images');
+    const safeName = String(originalName).replace(/[|=]/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_');
+    formData.append('context', `original_name=${safeName}`);
+
     const response = await fetch(CLOUDINARY_UPLOAD_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            file: dataUrl,
-            upload_preset: CLOUDINARY_UPLOAD_PRESET,
-            folder: 'friendflow/images',
-            use_filename: false,
-            unique_filename: true,
-            context: `original_name=${String(originalName).replace(/[|=]/g, '_')}`
-        })
+        body: formData
     });
     const result = await response.json();
     if (!response.ok || !result.secure_url) {
