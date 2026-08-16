@@ -256,6 +256,79 @@
             display: none !important;
         }
 
+    
+        .rich-editor-wrap {
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(0,0,0,.38);
+        }
+        .rich-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,.10);
+            background: rgba(255,255,255,.035);
+        }
+        .rich-tool {
+            width: 36px;
+            height: 34px;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 7px;
+            background: rgba(255,255,255,.04);
+            color: #fff;
+            cursor: pointer;
+        }
+        .rich-tool:hover, .rich-tool.active {
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+            background: rgba(0,229,255,.08);
+        }
+        .rich-heading {
+            height: 34px;
+            padding: 0 8px;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 7px;
+            background: #11121a;
+            color: #fff;
+            cursor: pointer;
+        }
+        .post-editor {
+            min-height: 145px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 14px;
+            outline: none;
+            color: #fff;
+            line-height: 1.65;
+        }
+        .post-editor:empty::before {
+            content: attr(data-placeholder);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .post-editor h2, .post-editor h3, .post-editor h4 {
+            margin: 8px 0;
+            line-height: 1.25;
+        }
+        .post-editor mark {
+            padding: 0 3px;
+            border-radius: 3px;
+            background: #fff176;
+            color: #111;
+        }
+        .post-editor a, .post-content a {
+            color: var(--neon-blue);
+            text-decoration: underline;
+        }
+        .post-content h2 { font-size: 1.55rem; margin: 8px 0; }
+        .post-content h3 { font-size: 1.3rem; margin: 7px 0; }
+        .post-content h4 { font-size: 1.12rem; margin: 6px 0; }
+        .post-content p { margin: 0 0 8px; }
+        .post-content ul, .post-content ol { margin: 8px 0 8px 24px; }
+
     </style>
 </head>
 <body>
@@ -280,10 +353,29 @@
             <div class="glass-panel create-post-box">
                 <h3 style="margin-bottom: 15px; color: var(--neon-blue);">Create a Post</h3>
                 <div class="form-group">
-                    <textarea rows="3" placeholder="What's on your mind?"></textarea>
+                    <div class="rich-editor-wrap">
+                        <div class="rich-toolbar" id="post-toolbar">
+                            <button type="button" class="rich-tool" data-cmd="bold" title="Bold"><i class="fa-solid fa-bold"></i></button>
+                            <button type="button" class="rich-tool" data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+                            <button type="button" class="rich-tool" data-cmd="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
+                            <button type="button" class="rich-tool" data-cmd="highlight" title="Highlight"><i class="fa-solid fa-highlighter"></i></button>
+                            <select id="post-heading" class="rich-heading" title="Heading">
+                                <option value="p">Normal</option>
+                                <option value="h2">Heading 1</option>
+                                <option value="h3">Heading 2</option>
+                                <option value="h4">Heading 3</option>
+                            </select>
+                            <button type="button" class="rich-tool" id="post-link-btn" title="Attach link to selected word or line"><i class="fa-solid fa-link"></i></button>
+                            <button type="button" class="rich-tool" id="post-unlink-btn" title="Remove link"><i class="fa-solid fa-link-slash"></i></button>
+                            <button type="button" class="rich-tool" data-cmd="insertUnorderedList" title="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
+                            <button type="button" class="rich-tool" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
+                            <button type="button" class="rich-tool" id="post-clear-format" title="Clear formatting"><i class="fa-solid fa-eraser"></i></button>
+                        </div>
+                        <div id="post-editor" class="post-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a beautiful article... Use bold, highlight, headings and links."></div>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <input type="text" placeholder="Attach a Link (https://...)">
+                    <input id="post-link-input" type="text" placeholder="Optional post link (https://...)">
                 </div>
                 <div id="image-preview-wrap" style="display:none; margin:12px 0 16px; position:relative;">
                     <img id="image-preview" alt="Selected image preview"
@@ -733,11 +825,137 @@
             }
         }
 
+
+        function sanitizePostHtml(inputHtml = "") {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(String(inputHtml), "text/html");
+            const allowedTags = new Set([
+                "B","STRONG","I","EM","U","MARK","H2","H3","H4","P","BR",
+                "UL","OL","LI","A"
+            ]);
+            const walk = (node) => {
+                [...node.children].forEach(child => {
+                    if (!allowedTags.has(child.tagName)) {
+                        const frag = document.createDocumentFragment();
+                        while (child.firstChild) frag.appendChild(child.firstChild);
+                        child.replaceWith(frag);
+                        walk(node);
+                        return;
+                    }
+                    [...child.attributes].forEach(attr => {
+                        if (child.tagName === "A" && attr.name.toLowerCase() === "href") {
+                            try {
+                                const url = new URL(attr.value, location.href);
+                                if (!["http:", "https:"].includes(url.protocol)) child.removeAttribute("href");
+                            } catch (_) {
+                                child.removeAttribute("href");
+                            }
+                        } else if (child.tagName !== "A" || !["href"].includes(attr.name.toLowerCase())) {
+                            child.removeAttribute(attr.name);
+                        }
+                    });
+                    if (child.tagName === "A" && child.hasAttribute("href")) {
+                        child.setAttribute("target", "_blank");
+                        child.setAttribute("rel", "noopener noreferrer");
+                    }
+                    walk(child);
+                });
+            };
+            walk(doc.body);
+            return doc.body.innerHTML.trim();
+        }
+
+        function getEditor() {
+            return document.querySelector("#post-editor");
+        }
+
+        function saveEditorSelection() {
+            const editor = getEditor();
+            if (!editor) return;
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
+            editor._savedRange = sel.getRangeAt(0).cloneRange();
+        }
+
+        function restoreEditorSelection() {
+            const editor = getEditor();
+            if (!editor || !editor._savedRange) return;
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(editor._savedRange);
+        }
+
+        function execRichCommand(command, value = null) {
+            const editor = getEditor();
+            if (!editor) return;
+            editor.focus();
+            restoreEditorSelection();
+            document.execCommand(command, false, value);
+            saveEditorSelection();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        function attachSelectedLink() {
+            const editor = getEditor();
+            if (!editor) return;
+            editor.focus();
+            restoreEditorSelection();
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+                showStatus("Pehle word ya line select karein, phir Link button dabayein.");
+                return;
+            }
+            let url = window.prompt("Link URL (https://...):", "https://");
+            if (url === null) return;
+            url = url.trim();
+            if (!/^https?:\/\//i.test(url)) {
+                showStatus("Link http:// ya https:// se start hona chahiye.");
+                return;
+            }
+            document.execCommand("createLink", false, url);
+            saveEditorSelection();
+        }
+
+        function setupRichEditor() {
+            const editor = getEditor();
+            if (!editor) return;
+
+            document.querySelectorAll("#post-toolbar [data-cmd]").forEach(btn => {
+                btn.addEventListener("mousedown", e => e.preventDefault());
+                btn.addEventListener("click", () => {
+                    const cmd = btn.dataset.cmd;
+                    if (cmd === "highlight") {
+                        execRichCommand("hiliteColor", "#fff176");
+                        return;
+                    }
+                    execRichCommand(cmd);
+                });
+            });
+
+            $("#post-heading")?.addEventListener("change", e => {
+                execRichCommand("formatBlock", e.target.value);
+                e.target.value = "p";
+            });
+
+            $("#post-link-btn")?.addEventListener("mousedown", e => e.preventDefault());
+            $("#post-link-btn")?.addEventListener("click", attachSelectedLink);
+
+            $("#post-unlink-btn")?.addEventListener("mousedown", e => e.preventDefault());
+            $("#post-unlink-btn")?.addEventListener("click", () => execRichCommand("unlink"));
+
+            $("#post-clear-format")?.addEventListener("mousedown", e => e.preventDefault());
+            $("#post-clear-format")?.addEventListener("click", () => execRichCommand("removeFormat"));
+
+            editor.addEventListener("mouseup", saveEditorSelection);
+            editor.addEventListener("keyup", saveEditorSelection);
+        }
+
         function addLoginGuard() {
             const postButton = document.querySelector(".create-post-box .btn-neon-blue");
             if (!postButton) return;
             postButton.onclick = publishPost;
 
+            const editor = document.querySelector('#post-editor');
             const fileInput = document.querySelector('#post-image-input');
             const previewWrap = document.querySelector('#image-preview-wrap');
             const preview = document.querySelector('#image-preview');
@@ -799,9 +1017,10 @@
             }
 
             const box = document.querySelector(".create-post-box");
-            const textarea = box?.querySelector("textarea");
-            const linkInput = box?.querySelector('input[type="text"]');
-            const textValue = textarea?.value.trim() || "";
+            const editor = box?.querySelector("#post-editor");
+            const linkInput = box?.querySelector("#post-link-input");
+            const htmlValue = sanitizePostHtml(editor?.innerHTML || "");
+            const textValue = (editor?.textContent || "").trim();
             const linkValue = linkInput?.value.trim() || "";
 
             if (!textValue && !linkValue && !selectedImageUrl) {
@@ -812,6 +1031,7 @@
             try {
                 const post = {
                     text: textValue,
+                    textHtml: htmlValue || null,
                     link: linkValue || null,
                     imageUrl: selectedImageUrl || null,
                     imageName: selectedImageName || null,
@@ -826,7 +1046,7 @@
 
                 await addDoc(collection(db, "posts"), post);
 
-                textarea.value = "";
+                if (editor) editor.innerHTML = "";
                 linkInput.value = "";
                 const fileInput = box.querySelector('input[type="file"]');
                 if (fileInput) fileInput.value = "";
@@ -897,7 +1117,9 @@
                         </span>
                         <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(formatDate(post.createdAt))}</span>
                     </div>
-                    ${post.text ? `<div class="post-content">${escapeHtml(post.text).replace(/\n/g, "<br>")}</div>` : ""}
+                    ${post.textHtml
+                        ? `<div class="post-content">${sanitizePostHtml(post.textHtml)}</div>`
+                        : (post.text ? `<div class="post-content">${escapeHtml(post.text).replace(/\n/g, "<br>")}</div>` : "")}
                     ${image}
                     ${link}
                     <div class="post-actions"></div>`;
@@ -950,6 +1172,7 @@
         });
 
         addLoginGuard();
+        setupRichEditor();
         setupAdminLogoUnlock();
 
         $("#admin-refresh")?.addEventListener("click", renderAdminPanel);
