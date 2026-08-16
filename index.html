@@ -445,7 +445,6 @@ const DEFAULT_POSTS = [
 ];
 const normalizePost = (post) => ({
     ...post,
-    link: post?.link || ((post?.linkUrl || post?.websiteUrl || post?.targetUrl) ? { url: post.linkUrl || post.websiteUrl || post.targetUrl, title: post.linkTitle || post.linkUrl || post.websiteUrl || post.targetUrl } : null),
     images: Array.isArray(post?.images) ? post.images : [],
     likesCount: Number.isFinite(Number(post?.likesCount)) ? Number(post.likesCount) : 0,
     commentsCount: Number.isFinite(Number(post?.commentsCount)) ? Number(post.commentsCount) : 0,
@@ -1511,13 +1510,7 @@ function App() {
         }
         const text = postText.trim();
         const hasImages = uploadedImages.length > 0;
-        // Use the verified link, and also accept a URL still present in the Link input.
-        // This prevents a link from being lost if the user typed it but did not press Add.
         let finalLink = currentLink ? { ...currentLink } : null;
-        if (!finalLink && linkUrlInput.trim()) {
-            const typedUrl = normalizeUrlForSafety(linkUrlInput.trim());
-            if (typedUrl) finalLink = { url: typedUrl, title: linkTitleInput.trim() || typedUrl };
-        }
         // Normalize and re-check attached links at publish time so a blocked link cannot bypass the Add button.
         if (finalLink) {
             const safeUrl = normalizeUrlForSafety(finalLink.url);
@@ -1588,10 +1581,6 @@ function App() {
             text: text,
             images: [...uploadedImages],
             link: finalLink,
-            // Also store flat link fields for backwards compatibility and reliable rendering.
-            linkUrl: finalLink?.url || '',
-            websiteUrl: finalLink?.url || '',
-            linkTitle: finalLink?.title || '',
             likesCount: 0,
             commentsCount: 0,
             isLiked: false,
@@ -2354,7 +2343,7 @@ function App() {
                                     " Sign In"))),
 
                         React.createElement("div", null, posts.map((post) => {
-                            const effectiveLink = normalizeExternalUrl((typeof post.link === 'string' ? post.link : null) || post.link?.url || post.link?.linkUrl || post.link?.websiteUrl || post.link?.targetUrl || post.link?.website?.url || post.link?.attachedLink?.url || post.linkUrl || post.websiteUrl || post.targetUrl || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const effectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center gap-3 mb-3" },
@@ -2380,31 +2369,6 @@ function App() {
                                             ? `Click image to open link: ${effectiveLink}`
                                             : 'Click to view full image in window' },
                                         React.createElement("img", { src: post.images[0].dataUrl, className: "w-full max-h-[520px] object-contain group-hover:scale-[1.01] transition-transform duration-300", alt: "Post Media" }),
-                                        effectiveLink ? (React.createElement(React.Fragment, null,
-                                            React.createElement("div", { className: "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/75 to-transparent p-3 pt-6 flex items-center justify-between gap-2 z-10", onClick: (e) => {
-                                                    e.stopPropagation();
-                                                    openExternalLink(effectiveLink);
-                                                } },
-                                                React.createElement("div", { className: "flex items-center gap-2 min-w-0 text-white" },
-                                                    React.createElement("div", { className: "w-8 h-8 rounded-xl bg-lp flex items-center justify-center flex-shrink-0 text-white shadow-md" },
-                                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:earth", "data-width": "18" })),
-                                                    React.createElement("div", { className: "min-w-0" },
-                                                        React.createElement("div", { className: "text-xs font-bold text-white truncate" }, post.link?.title || 'Visit Attached Website'),
-                                                        React.createElement("div", { className: "text-[11px] text-white/80 truncate font-mono" }, effectiveLink))),
-                                                React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0" },
-                                                    React.createElement("button", { onClick: (e) => {
-                                                            e.stopPropagation();
-                                                            openExternalLink(effectiveLink);
-                                                        }, className: "bg-lp hover:bg-lp-light text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1 border border-white/20 active:scale-95 cursor-pointer" },
-                                                        React.createElement("span", null, "Open Site"),
-                                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:open-in-new", "data-width": "14" })),
-                                                    React.createElement("button", { onClick: (e) => {
-                                                            e.stopPropagation();
-                                                            setLightboxImage(post.images[0].dataUrl);
-                                                        }, className: "bg-black/60 hover:bg-black/90 text-white p-1.5 rounded-xl text-xs transition-all border border-white/20 cursor-pointer", title: "View Full Photo" },
-                                                        React.createElement("span", { className: "iconify", "data-icon": "mdi:fullscreen", "data-width": "16" })))))) : (React.createElement("div", { className: "absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2.5 py-1 rounded-xl backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-semibold border border-white/20 shadow-md" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:fullscreen", "data-width": "14" }),
-                                            " Fit Window")))),
                                     post.images.length > 1 && (React.createElement("div", { className: "grid grid-cols-2 gap-1.5 rounded-2xl overflow-hidden mb-3 bg-black/5 dark:bg-white/5 border theme-border p-1 relative" }, post.images.map((img, idx) => (React.createElement("div", { key: idx, className: "relative h-48 rounded-xl overflow-hidden cursor-pointer bg-black/20 group flex items-center justify-center", onClick: () => {
                                             if (effectiveLink) {
                                                 openExternalLink(effectiveLink);
@@ -2416,16 +2380,6 @@ function App() {
                                             ? `Click image to open link: ${effectiveLink}`
                                             : 'Click to view full image in window' },
                                         React.createElement("img", { src: img.dataUrl, className: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-300", alt: `Post media ${idx}` }),
-                                        effectiveLink ? (React.createElement("div", { className: "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-2 pt-4 flex items-center justify-between" },
-                                            React.createElement("span", { className: "text-[10px] text-white font-semibold truncate flex items-center gap-1" },
-                                                React.createElement("span", { className: "iconify text-lp", "data-icon": "mdi:earth", "data-width": "12" }),
-                                                React.createElement("span", null, "Link Attached")),
-                                            React.createElement("button", { onClick: (e) => {
-                                                    e.stopPropagation();
-                                                    setLightboxImage(img.dataUrl);
-                                                }, className: "bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded border border-white/20", title: "Zoom photo" }, "Zoom"))) : (React.createElement("div", { className: "absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-medium border border-white/20" },
-                                            React.createElement("span", { className: "iconify", "data-icon": "mdi:fullscreen", "data-width": "12" }),
-                                            " Fit View"))))))),
                                     effectiveLink && (React.createElement("div", { className: "link-preview mb-3 flex items-center justify-between gap-3 p-3 rounded-2xl border theme-border theme-surface hover:border-lp hover:bg-lp/5 transition-all cursor-pointer group shadow-sm", onClick: () => openExternalLink(effectiveLink) },
                                         React.createElement("div", { className: "flex items-center gap-3 min-w-0" },
                                             React.createElement("div", { className: "w-10 h-10 rounded-xl bg-lp/10 text-lp flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" },
@@ -2557,7 +2511,7 @@ function App() {
                                 }, className: "bg-lp text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-lp-light transition-all shadow-md cursor-pointer" }, "Publish First Post \u2728"))) : (posts
                             .filter((p) => p.author === userProfile.name || p.author === 'You')
                             .map((post) => {
-                            const profileEffectiveLink = normalizeExternalUrl((typeof post.link === 'string' ? post.link : null) || post.link?.url || post.link?.linkUrl || post.link?.websiteUrl || post.link?.targetUrl || post.link?.website?.url || post.link?.attachedLink?.url || post.linkUrl || post.websiteUrl || post.targetUrl || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
+                            const profileEffectiveLink = normalizeExternalUrl(post.link?.url || (post.text ? post.text.match(/https?:\/\/[^\s]+/i)?.[0] : '')) || null;
                             return (React.createElement("div", { key: post.id, className: "theme-card rounded-2xl border theme-border theme-shadow mb-4 overflow-hidden" },
                                 React.createElement("div", { className: "p-4" },
                                     React.createElement("div", { className: "flex items-center justify-between mb-3" },
