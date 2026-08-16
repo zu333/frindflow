@@ -563,7 +563,7 @@
 
             const postSnap = await new Promise((resolve, reject) => {
                 const unsub = onSnapshot(
-                    query(collection(db, "posts"), orderBy("createdAt", "desc")),
+                    query(collection(db, "posts")),
                     snap => { unsub(); resolve(snap); },
                     err => { unsub(); reject(err); }
                 );
@@ -571,6 +571,16 @@
 
             const posts = [];
             postSnap.forEach(s => posts.push({ id: s.id, ...s.data() }));
+
+            const adminPostTime = (post) => {
+                const value = post.createdAt ?? post.timestamp ?? post.date ?? post.created_at ?? 0;
+                if (value && typeof value.toMillis === "function") return value.toMillis();
+                if (value && typeof value.seconds === "number") return value.seconds * 1000;
+                if (typeof value === "number") return value;
+                const parsed = new Date(value).getTime();
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+            posts.sort((a, b) => adminPostTime(b) - adminPostTime(a));
 
             postList.innerHTML = posts.length ? "" : '<div style="color:var(--text-muted)">No posts found.</div>';
 
@@ -850,12 +860,26 @@
             const posts = [];
             snapshot.forEach(s => posts.push({ id: s.id, ...s.data() }));
 
+            // Newest first. Also keep older posts that may not have createdAt.
+            const postTime = (post) => {
+                const value = post.createdAt ?? post.timestamp ?? post.date ?? post.created_at ?? 0;
+                if (value && typeof value.toMillis === "function") return value.toMillis();
+                if (value && typeof value.seconds === "number") return value.seconds * 1000;
+                if (typeof value === "number") return value;
+                const parsed = new Date(value).getTime();
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+            posts.sort((a, b) => postTime(b) - postTime(a));
+
+            const fragment = document.createDocumentFragment();
+
             posts.forEach(post => {
                 const card = document.createElement("div");
                 card.className = "glass-panel post-card dynamic-post";
 
                 const image = post.imageUrl
-                    ? `<img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image">`
+                    ? `<img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image" onerror="this.style.display='none'; this.nextElementSibling?.classList.add('image-load-error');">
+                       <div class="image-load-error" style="display:none;color:var(--text-muted);font-size:12px;margin-top:8px;">Image could not be loaded.</div>`
                     : "";
 
                 const link = post.link
@@ -887,12 +911,16 @@
                     }
                 });
 
-                createBox.after(card);
+                fragment.appendChild(card);
             });
+
+            createBox.after(fragment);
         }
 
         function listenToPosts() {
-            const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+            // Do not use Firestore orderBy here: older posts without createdAt
+            // would disappear completely. Sort them in the browser instead.
+            const postsQuery = query(collection(db, "posts"));
             onSnapshot(postsQuery, renderPosts, error => {
                 console.error(error);
                 showStatus("Posts could not be loaded. Check Firestore rules/index.");
