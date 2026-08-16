@@ -328,8 +328,33 @@
             overflow-y: auto;
             padding: 14px;
             outline: none;
-            color: #fff;
+            color: #fff !important;
             line-height: 1.65;
+            background: transparent;
+        }
+        .post-editor p,
+        .post-editor div,
+        .post-editor h1,
+        .post-editor h2,
+        .post-editor h3,
+        .post-editor h4,
+        .post-editor li,
+        .post-editor strong,
+        .post-editor b,
+        .post-editor em,
+        .post-editor i,
+        .post-editor u {
+            color: inherit !important;
+        }
+        .post-editor a {
+            color: var(--neon-blue) !important;
+        }
+        .post-editor mark {
+            color: #111 !important;
+            background: #fff176 !important;
+        }
+        .post-editor font[color] {
+            color: inherit !important;
         }
         .post-editor:empty::before {
             content: attr(data-placeholder);
@@ -958,8 +983,13 @@
             const editor = getEditor();
             if (!editor) return;
             const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
-            editor._savedRange = sel.getRangeAt(0).cloneRange();
+            if (!sel || !sel.rangeCount) return;
+            if (!editor.contains(sel.anchorNode) || !editor.contains(sel.focusNode)) return;
+
+            const range = sel.getRangeAt(0);
+            if (range.collapsed) return;
+
+            editor._savedRange = range.cloneRange();
         }
 
         function restoreEditorSelection() {
@@ -973,8 +1003,14 @@
         function execRichCommand(command, value = null) {
             const editor = getEditor();
             if (!editor) return;
+
+            const hadSelection = !!editor._savedRange;
             editor.focus();
-            restoreEditorSelection();
+
+            if (hadSelection) {
+                restoreEditorSelection();
+            }
+
             document.execCommand(command, false, value);
             saveEditorSelection();
             editor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1018,12 +1054,38 @@
             editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
+
+        function cleanEditorPastedFormatting() {
+            const editor = getEditor();
+            if (!editor) return;
+            editor.querySelectorAll('[style]').forEach(el => {
+                const style = el.getAttribute("style") || "";
+                if (/color\s*:/i.test(style)) {
+                    el.style.removeProperty("color");
+                    if (!el.getAttribute("style").trim()) el.removeAttribute("style");
+                }
+            });
+            editor.querySelectorAll('font[color]').forEach(font => {
+                // Keep explicit colours created by our colour tool.
+                if (!font.getAttribute("data-user-color")) {
+                    font.removeAttribute("color");
+                }
+            });
+        }
+
         function setupRichEditor() {
             const editor = getEditor();
             if (!editor) return;
 
+            // Prevent toolbar clicks from destroying the selected text.
+            document.querySelectorAll("#post-toolbar .rich-tool").forEach(btn => {
+                btn.addEventListener("mousedown", e => {
+                    saveEditorSelection();
+                    e.preventDefault();
+                });
+            });
+
             document.querySelectorAll("#post-toolbar [data-cmd]").forEach(btn => {
-                btn.addEventListener("mousedown", e => e.preventDefault());
                 btn.addEventListener("click", () => {
                     const cmd = btn.dataset.cmd;
                     if (cmd === "highlight") {
@@ -1034,18 +1096,26 @@
                 });
             });
 
+            $("#post-heading")?.addEventListener("mousedown", () => {
+                saveEditorSelection();
+            });
             $("#post-heading")?.addEventListener("change", e => {
-                execRichCommand("formatBlock", e.target.value);
+                const value = e.target.value;
+                execRichCommand("formatBlock", value);
                 e.target.value = "p";
             });
 
-            $("#post-font-color")?.addEventListener("mousedown", e => e.preventDefault());
+            $("#post-font-color")?.addEventListener("mousedown", e => {
+                saveEditorSelection();
+                e.preventDefault();
+            });
             $("#post-font-color")?.addEventListener("input", e => {
                 const editor = getEditor();
                 if (!editor) return;
                 editor.focus();
                 restoreEditorSelection();
                 document.execCommand("foreColor", false, e.target.value);
+                editor.querySelectorAll("font[color]").forEach(font => font.setAttribute("data-user-color", "1"));
                 saveEditorSelection();
                 editor.dispatchEvent(new Event("input", { bubbles: true }));
             });
@@ -1061,6 +1131,20 @@
 
             editor.addEventListener("mouseup", saveEditorSelection);
             editor.addEventListener("keyup", saveEditorSelection);
+            editor.addEventListener("input", () => {
+                cleanEditorPastedFormatting();
+                saveEditorSelection();
+            });
+            editor.addEventListener("paste", () => {
+                setTimeout(cleanEditorPastedFormatting, 0);
+            });
+            document.addEventListener("selectionchange", () => {
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount || !sel.anchorNode) return;
+                if (editor.contains(sel.anchorNode) && editor.contains(sel.focusNode) && !sel.isCollapsed) {
+                    editor._savedRange = sel.getRangeAt(0).cloneRange();
+                }
+            });
         }
 
         function addLoginGuard() {
