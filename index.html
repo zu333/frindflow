@@ -224,9 +224,10 @@
         .post-actions {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 10px;
+            margin-top: 12px;
+        }
+        .post-actions:empty {
+            display: none;
         }
 
         /* Section Containers */
@@ -234,20 +235,6 @@
             padding: 20px;
             margin-bottom: 30px;
         }
-
-        /* Ad / Banner Placeholder */
-        .ad-container {
-            width: 100%;
-            height: 90px;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-        }
-
         /* Footer */
         footer {
             padding: 20px;
@@ -261,17 +248,25 @@
             font-weight: bold;
         }
 
+    
+        /* Hide empty post shells; real Firebase posts remain visible. */
+        .dynamic-post:empty,
+        .dynamic-post.empty-post,
+        .post-card:empty {
+            display: none !important;
+        }
+
     </style>
 </head>
 <body>
 
     <!-- Glassmorphic Header -->
     <header class="glass-panel">
-        <div class="logo" onclick="switchView('feed-view')"><i class="fa-solid fa-cube"></i> FrindFlow</div>
+        <div class="logo" id="frindflow-logo" title="FrindFlow"><i class="fa-solid fa-cube"></i> FrindFlow</div>
         <nav>
             <button onclick="switchView('feed-view')" id="nav-feed" class="active"><i class="fa-solid fa-house"></i> Feed</button>
             <button onclick="switchView('profile-view')" id="nav-profile"><i class="fa-solid fa-user"></i> Profile</button>
-            <button onclick="switchView('admin-view')" id="nav-admin"><i class="fa-solid fa-shield-halved"></i> Admin</button>
+            <button onclick="switchView('admin-view')" id="nav-admin" style="display:none;"><i class="fa-solid fa-shield-halved"></i> Admin</button>
         </nav>
     </header>
 
@@ -290,51 +285,23 @@
                 <div class="form-group">
                     <input type="text" placeholder="Attach a Link (https://...)">
                 </div>
+                <div id="image-preview-wrap" style="display:none; margin:12px 0 16px; position:relative;">
+                    <img id="image-preview" alt="Selected image preview"
+                         style="width:100%; max-height:320px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.12); display:block;">
+                    <button id="remove-image-preview" type="button"
+                            style="position:absolute;top:8px;right:8px;border:0;border-radius:999px;width:32px;height:32px;background:rgba(0,0,0,.75);color:#fff;cursor:pointer;"
+                            title="Remove image"><i class="fa-solid fa-xmark"></i></button>
+                </div>
                 <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
                     <!-- Cloudinary / File Input Trigger -->
                     <label class="btn-neon-purple" style="cursor: pointer;">
                         <i class="fa-solid fa-image"></i> Upload Image
-                        <input type="file" style="display: none;" accept="image/*">
+                        <input id="post-image-input" type="file" style="display: none;" accept="image/*">
                     </label>
+                    <span id="image-upload-status" style="font-size:12px;color:var(--text-muted);"></span>
                     <button class="btn-neon-blue" onclick="alert('Post logic will connect to Firebase/Cloudinary here.')">
                         <i class="fa-solid fa-paper-plane"></i> Post
                     </button>
-                </div>
-            </div>
-
-            <!-- Empty Ad Container Placeholder -->
-            <div class="ad-container glass-panel">
-                Advertisement Space
-            </div>
-
-            <!-- Dummy Post 1 -->
-            <div class="glass-panel post-card">
-                <div class="post-header">
-                    <span class="post-user"><i class="fa-solid fa-circle-user"></i> User123</span>
-                    <span style="font-size: 12px; color: var(--text-muted);">2 hours ago</span>
-                </div>
-                <div class="post-content">
-                    Checking out the new platform layout. The glassmorphism looks clean!
-                </div>
-                <!-- Image fetched from Cloudinary -->
-                <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80" alt="Post Image" class="post-image">
-                <div class="post-actions">
-                    <button class="btn-neon-gold"><i class="fa-solid fa-pen"></i> Edit</button>
-                    <button class="btn-danger"><i class="fa-solid fa-trash"></i> Delete</button>
-                </div>
-            </div>
-
-            <!-- Dummy Post 2 (Link Post) -->
-            <div class="glass-panel post-card">
-                <div class="post-header">
-                    <span class="post-user"><i class="fa-solid fa-circle-user"></i> TechEnthusiast</span>
-                    <span style="font-size: 12px; color: var(--text-muted);">5 hours ago</span>
-                </div>
-                <div class="post-content">
-                    Found an amazing resource for web development.
-                </div>
-                <div class="post-link">
-                    <i class="fa-solid fa-link"></i> <a href="#" target="_blank">https://example-link.com/useful-resource</a>
                 </div>
             </div>
         </section>
@@ -364,29 +331,51 @@
 
         <!-- ================= ADMIN PANEL VIEW ================= -->
         <section id="admin-view" class="view-section">
-            <div class="glass-panel create-post-box" style="border-color: rgba(255, 207, 0, 0.3);">
-                <h2 style="color: var(--neon-gold); margin-bottom: 20px;"><i class="fa-solid fa-shield-halved"></i> Admin Control Center</h2>
-                
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Superuser access: Override rules, manage users, and handle spam protection.</p>
+            <div class="glass-panel create-post-box" style="border-color: rgba(255, 207, 0, 0.35);">
+                <h2 style="color: var(--neon-gold); margin-bottom: 10px;">
+                    <i class="fa-solid fa-shield-halved"></i> Admin Control Center
+                </h2>
+                <p style="color: var(--text-muted); margin-bottom: 18px;">
+                    Admin tools: delete posts, block users, and publish with admin bypass.
+                    <br><small style="color:#ffb86b;">The password unlock is a front-end gate; Firebase Security Rules must also authorize admin actions for real protection.</small>
+                </p>
 
-                <!-- Admin Action 1: Post Management -->
-                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h4 style="color: white; margin-bottom: 10px;">Recent System Posts</h4>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                        <span>Post ID: #9821 (Flagged Link)</span>
-                        <button class="btn-danger"><i class="fa-solid fa-ban"></i> Force Delete</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+                    <button id="admin-refresh" class="btn-neon-gold">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                    <button id="admin-exit" class="btn-danger">
+                        <i class="fa-solid fa-right-from-bracket"></i> Exit Admin
+                    </button>
+                </div>
+
+                <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
+                    <h4 style="color:white;margin-bottom:10px;">Admin Bypass Post</h4>
+                    <label style="display:flex;align-items:center;gap:10px;color:var(--text-muted);margin-bottom:12px;">
+                        <input id="admin-bypass-toggle" type="checkbox" style="width:18px;height:18px;">
+                        <span>Enable admin bypass for posting</span>
+                    </label>
+                    <textarea id="admin-post-text" rows="3" placeholder="Write an admin post..."></textarea>
+                    <input id="admin-post-link" type="text" placeholder="Attach a Link (https://...)" style="margin-top:10px;">
+                    <button id="admin-publish" class="btn-neon-gold" style="margin-top:10px;width:100%;">
+                        <i class="fa-solid fa-bolt"></i> Publish Admin Post
+                    </button>
+                    <div id="admin-post-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
+                </div>
+
+                <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
+                    <h4 style="color:white;margin-bottom:10px;">Post Management</h4>
+                    <div id="admin-post-list" style="display:grid;gap:10px;">
+                        <div style="color:var(--text-muted);">Admin login required.</div>
                     </div>
                 </div>
 
-                <!-- Admin Action 2: User Management -->
-                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
-                    <h4 style="color: white; margin-bottom: 10px;">User Management</h4>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>User: Spammer99</span>
-                        <button class="btn-danger"><i class="fa-solid fa-user-lock"></i> Block User</button>
+                <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;">
+                    <h4 style="color:white;margin-bottom:10px;">User Management</h4>
+                    <div id="admin-user-list" style="display:grid;gap:10px;">
+                        <div style="color:var(--text-muted);">Admin login required.</div>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -407,7 +396,7 @@
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import {
             getFirestore, collection, addDoc, query, orderBy, onSnapshot,
-            serverTimestamp, deleteDoc, doc
+            serverTimestamp, deleteDoc, doc, getDoc, setDoc
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -430,6 +419,11 @@
         let currentUser = null;
         let selectedImageUrl = "";
         let selectedImageName = "";
+        let adminMode = false;
+        let adminBypassPost = false;
+        let logoClicks = 0;
+        let logoClickTimer = null;
+        const ADMIN_PASSWORD = "lahore799";
 
         const $ = (s) => document.querySelector(s);
 
@@ -467,6 +461,212 @@
                 throw new Error(result.error?.message || "Cloudinary upload failed.");
             }
             return result.secure_url;
+        }
+
+
+        function isAdmin() {
+            return adminMode === true;
+        }
+
+        function openAdminLogin() {
+            const password = window.prompt("Enter Admin Password:");
+            if (password === ADMIN_PASSWORD) {
+                adminMode = true;
+                const navAdmin = $("#nav-admin");
+                if (navAdmin) navAdmin.style.display = "inline-block";
+                switchView("admin-view");
+                renderAdminPanel();
+                showStatus("Admin mode enabled.", true);
+            } else if (password !== null) {
+                showStatus("Wrong admin password.");
+            }
+        }
+
+        function setupAdminLogoUnlock() {
+            const logo = $("#frindflow-logo");
+            if (!logo) return;
+            logo.addEventListener("click", () => {
+                switchView("feed-view");
+                logoClicks++;
+                clearTimeout(logoClickTimer);
+                logoClickTimer = setTimeout(() => { logoClicks = 0; }, 2500);
+
+                if (logoClicks >= 10) {
+                    logoClicks = 0;
+                    openAdminLogin();
+                }
+            });
+        }
+
+        async function isBlocked(uid) {
+            if (!uid) return false;
+            try {
+                const snap = await getDoc(doc(db, "blockedUsers", uid));
+                return snap.exists() && snap.data()?.blocked === true;
+            } catch (e) {
+                console.warn("Block check failed:", e);
+                return false;
+            }
+        }
+
+        async function blockUser(uid, name) {
+            if (!isAdmin() || !uid) return;
+            try {
+                await setDoc(doc(db, "blockedUsers", uid), {
+                    blocked: true,
+                    userName: name || "User",
+                    blockedAt: serverTimestamp()
+                }, { merge: true });
+                showStatus(`${name || "User"} blocked.`, true);
+                renderAdminPanel();
+            } catch (e) {
+                showStatus("Block failed: " + e.message);
+            }
+        }
+
+        async function unblockUser(uid, name) {
+            if (!isAdmin() || !uid) return;
+            try {
+                await setDoc(doc(db, "blockedUsers", uid), {
+                    blocked: false,
+                    userName: name || "User",
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                showStatus(`${name || "User"} unblocked.`, true);
+                renderAdminPanel();
+            } catch (e) {
+                showStatus("Unblock failed: " + e.message);
+            }
+        }
+
+        async function deletePostAsAdmin(postId) {
+            if (!isAdmin()) return;
+            if (!window.confirm("Delete this post?")) return;
+            try {
+                await deleteDoc(doc(db, "posts", postId));
+                showStatus("Post deleted by admin.", true);
+                renderAdminPanel();
+            } catch (e) {
+                showStatus("Admin delete failed: " + e.message);
+            }
+        }
+
+        async function renderAdminPanel() {
+            if (!isAdmin()) return;
+
+            const postList = $("#admin-post-list");
+            const userList = $("#admin-user-list");
+            if (!postList || !userList) return;
+
+            postList.innerHTML = '<div style="color:var(--text-muted)">Loading...</div>';
+            userList.innerHTML = '<div style="color:var(--text-muted)">Loading...</div>';
+
+            const postSnap = await new Promise((resolve, reject) => {
+                const unsub = onSnapshot(
+                    query(collection(db, "posts"), orderBy("createdAt", "desc")),
+                    snap => { unsub(); resolve(snap); },
+                    err => { unsub(); reject(err); }
+                );
+            });
+
+            const posts = [];
+            postSnap.forEach(s => posts.push({ id: s.id, ...s.data() }));
+
+            postList.innerHTML = posts.length ? "" : '<div style="color:var(--text-muted)">No posts found.</div>';
+
+            const users = new Map();
+            posts.forEach(post => {
+                if (post.uid) {
+                    if (!users.has(post.uid)) users.set(post.uid, {
+                        uid: post.uid,
+                        name: post.userName || "User",
+                        count: 0
+                    });
+                    users.get(post.uid).count++;
+                }
+            });
+
+            posts.slice(0, 30).forEach(post => {
+                const item = document.createElement("div");
+                item.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,.08);";
+                const preview = (post.text || post.link || (post.imageUrl ? "[Image]" : "[Empty]")).slice(0, 70);
+                item.innerHTML = `
+                    <div style="min-width:0;">
+                        <strong>${escapeHtml(post.userName || "User")}</strong>
+                        <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(preview)}</div>
+                    </div>
+                    <button class="btn-danger" style="flex:0 0 auto;" data-admin-delete="${escapeHtml(post.id)}">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>`;
+                item.querySelector("[data-admin-delete]")?.addEventListener("click", () => deletePostAsAdmin(post.id));
+                postList.appendChild(item);
+            });
+
+            userList.innerHTML = users.size ? "" : '<div style="color:var(--text-muted)">No users found from posts.</div>';
+
+            for (const user of users.values()) {
+                let blocked = false;
+                try {
+                    const snap = await getDoc(doc(db, "blockedUsers", user.uid));
+                    blocked = snap.exists() && snap.data()?.blocked === true;
+                } catch (_) {}
+
+                const item = document.createElement("div");
+                item.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,.08);";
+                item.innerHTML = `
+                    <div>
+                        <strong>${escapeHtml(user.name)}</strong>
+                        <div style="font-size:12px;color:var(--text-muted);">${user.count} post(s) • ${blocked ? "Blocked" : "Active"}</div>
+                    </div>
+                    <button class="${blocked ? "btn-neon-blue" : "btn-danger"}" data-user-action="${escapeHtml(user.uid)}">
+                        <i class="fa-solid ${blocked ? "fa-user-check" : "fa-user-lock"}"></i>
+                        ${blocked ? "Unblock" : "Block"}
+                    </button>`;
+                item.querySelector("[data-user-action]")?.addEventListener("click", () => {
+                    blocked ? unblockUser(user.uid, user.name) : blockUser(user.uid, user.name);
+                });
+                userList.appendChild(item);
+            }
+        }
+
+        async function publishAdminPost() {
+            if (!isAdmin()) return;
+            const text = $("#admin-post-text")?.value.trim() || "";
+            const link = $("#admin-post-link")?.value.trim() || "";
+            const bypass = $("#admin-bypass-toggle")?.checked === true;
+            adminBypassPost = bypass;
+
+            if (!text && !link) {
+                showStatus("Write text or add a link first.");
+                return;
+            }
+
+            if (!currentUser) {
+                showStatus("Admin bypass still needs a signed-in Firebase account for Firestore security.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "posts"), {
+                    text,
+                    link: link || null,
+                    imageUrl: null,
+                    imageName: null,
+                    uid: currentUser.uid,
+                    userName: "Admin",
+                    userEmail: currentUser.email || "",
+                    userPhoto: currentUser.photoURL || "",
+                    isAdminPost: true,
+                    adminBypass: bypass,
+                    createdAt: serverTimestamp()
+                });
+                $("#admin-post-text").value = "";
+                $("#admin-post-link").value = "";
+                showStatus("Admin post published.", true);
+                renderAdminPanel();
+            } catch (e) {
+                showStatus("Admin post failed: " + e.message);
+            }
         }
 
         function updateAuthUi() {
@@ -528,32 +728,63 @@
             if (!postButton) return;
             postButton.onclick = publishPost;
 
-            const fileInput = document.querySelector('.create-post-box input[type="file"]');
+            const fileInput = document.querySelector('#post-image-input');
+            const previewWrap = document.querySelector('#image-preview-wrap');
+            const preview = document.querySelector('#image-preview');
+            const removePreview = document.querySelector('#remove-image-preview');
+            const uploadStatus = document.querySelector('#image-upload-status');
+
             if (fileInput) {
                 fileInput.addEventListener("change", async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
-                    if (!currentUser) {
+
+                    if (!currentUser && !isAdmin()) {
                         event.target.value = "";
                         showStatus("Please sign in before uploading an image.");
                         return;
                     }
+
+                    // Show the image immediately, before Cloudinary finishes.
+                    const localUrl = URL.createObjectURL(file);
+                    preview.src = localUrl;
+                    previewWrap.style.display = "block";
+                    uploadStatus.textContent = "Uploading...";
+
                     try {
-                        showStatus("Uploading image...");
                         selectedImageUrl = await uploadToCloudinary(file);
                         selectedImageName = file.name;
+                        uploadStatus.textContent = "Image ready";
                         showStatus("Image uploaded successfully.", true);
                     } catch (e) {
                         selectedImageUrl = "";
+                        selectedImageName = "";
+                        previewWrap.style.display = "none";
+                        uploadStatus.textContent = "";
+                        event.target.value = "";
                         showStatus(e.message);
                     }
                 });
             }
+
+            removePreview?.addEventListener("click", () => {
+                selectedImageUrl = "";
+                selectedImageName = "";
+                if (fileInput) fileInput.value = "";
+                if (preview) preview.removeAttribute("src");
+                if (previewWrap) previewWrap.style.display = "none";
+                if (uploadStatus) uploadStatus.textContent = "";
+            });
         }
 
         async function publishPost() {
-            if (!currentUser) {
+            if (!currentUser && !isAdmin()) {
                 showStatus("Please sign in first.");
+                return;
+            }
+
+            if (currentUser && !adminBypassPost && await isBlocked(currentUser.uid)) {
+                showStatus("Your account is blocked by admin.");
                 return;
             }
 
@@ -574,10 +805,12 @@
                     link: linkValue || null,
                     imageUrl: selectedImageUrl || null,
                     imageName: selectedImageName || null,
-                    uid: currentUser.uid,
-                    userName: currentUser.displayName || "User",
-                    userEmail: currentUser.email || "",
-                    userPhoto: currentUser.photoURL || "",
+                    uid: currentUser?.uid || "admin-bypass",
+                    userName: isAdmin() ? "Admin" : (currentUser.displayName || "User"),
+                    userEmail: currentUser?.email || "",
+                    userPhoto: currentUser?.photoURL || "",
+                    isAdminPost: isAdmin(),
+                    adminBypass: isAdmin() && adminBypassPost,
                     createdAt: serverTimestamp()
                 };
 
@@ -589,6 +822,12 @@
                 if (fileInput) fileInput.value = "";
                 selectedImageUrl = "";
                 selectedImageName = "";
+                const previewWrap = document.querySelector("#image-preview-wrap");
+                const preview = document.querySelector("#image-preview");
+                const uploadStatus = document.querySelector("#image-upload-status");
+                if (preview) preview.removeAttribute("src");
+                if (previewWrap) previewWrap.style.display = "none";
+                if (uploadStatus) uploadStatus.textContent = "";
                 showStatus("Post published.", true);
             } catch (e) {
                 showStatus("Could not publish: " + e.message);
@@ -605,7 +844,6 @@
             if (!feed) return;
 
             const createBox = feed.querySelector(".create-post-box");
-            const ad = feed.querySelector(".ad-container");
 
             [...feed.querySelectorAll(".dynamic-post")].forEach(el => el.remove());
 
@@ -621,14 +859,13 @@
                     : "";
 
                 const link = post.link
-                    ? `<div class="post-link" style="margin-top:10px"><i class="fa-solid fa-link"></i> <a href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(post.link)}</a></div>`
+                    ? `<div class="post-link" style="margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                         <a href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                           <i class="fa-solid fa-link"></i> ${escapeHtml(post.link)}
+                         </a>
+                         <a href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" class="btn-neon-blue" style="flex:0 0 auto;text-decoration:none;padding:8px 12px;">Open Website</a>
+                       </div>`
                     : "";
-
-                const owner = currentUser && currentUser.uid === post.uid;
-                const deleteButton = owner
-                    ? `<button class="btn-danger" data-delete="${post.id}"><i class="fa-solid fa-trash"></i> Delete</button>`
-                    : "";
-
                 card.innerHTML = `
                     <div class="post-header">
                         <span class="post-user">
@@ -639,7 +876,7 @@
                     ${post.text ? `<div class="post-content">${escapeHtml(post.text).replace(/\n/g, "<br>")}</div>` : ""}
                     ${image}
                     ${link}
-                    <div class="post-actions">${deleteButton}</div>`;
+                    <div class="post-actions"></div>`;
 
                 card.querySelector("[data-delete]")?.addEventListener("click", async () => {
                     try {
@@ -650,8 +887,7 @@
                     }
                 });
 
-                if (ad) ad.after(card);
-                else createBox.after(card);
+                createBox.after(card);
             });
         }
 
@@ -676,6 +912,7 @@
                 "admin-view": "nav-admin"
             };
             if (map[viewId]) document.getElementById(map[viewId])?.classList.add("active");
+            if (viewId === "admin-view" && isAdmin()) renderAdminPanel();
         };
 
         onAuthStateChanged(auth, user => {
@@ -685,6 +922,22 @@
         });
 
         addLoginGuard();
+        setupAdminLogoUnlock();
+
+        $("#admin-refresh")?.addEventListener("click", renderAdminPanel);
+        $("#admin-exit")?.addEventListener("click", () => {
+            adminMode = false;
+            adminBypassPost = false;
+            const navAdmin = $("#nav-admin");
+            if (navAdmin) navAdmin.style.display = "none";
+            switchView("feed-view");
+            showStatus("Admin mode closed.", true);
+        });
+        $("#admin-bypass-toggle")?.addEventListener("change", e => {
+            adminBypassPost = e.target.checked;
+        });
+        $("#admin-publish")?.addEventListener("click", publishAdminPost);
+
         listenToPosts();
     </script>
 </body>
