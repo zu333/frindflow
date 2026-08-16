@@ -417,6 +417,25 @@
             object-fit: contain;
         }
 
+    
+        #post-toolbar select {
+            min-width: 95px;
+            height: 34px;
+            padding: 0 8px;
+        }
+        #post-font-size {
+            min-width: 88px !important;
+        }
+        #post-editor,
+        .post-editor {
+            color: #fff !important;
+            caret-color: #fff;
+        }
+        #post-editor * ,
+        .post-editor * {
+            caret-color: #fff;
+        }
+
     </style>
 </head>
 <body>
@@ -451,7 +470,19 @@
                                 <i class="fa-solid fa-font"></i>
                                 <input type="color" id="post-font-color" value="#00e5ff" aria-label="Font colour">
                             </label>
-                            <select id="post-heading" class="rich-heading" title="Heading">
+                            <select id="post-font-size" title="Text size" aria-label="Text size">
+                <option value="">Size</option>
+                <option value="12">12 px</option>
+                <option value="14">14 px</option>
+                <option value="16">16 px</option>
+                <option value="18">18 px</option>
+                <option value="20">20 px</option>
+                <option value="24">24 px</option>
+                <option value="28">28 px</option>
+                <option value="32">32 px</option>
+                <option value="40">40 px</option>
+            </select>
+            <select id="post-heading" class="rich-heading" title="Heading">
                                 <option value="p">Normal</option>
                                 <option value="h2">Heading 1</option>
                                 <option value="h3">Heading 2</option>
@@ -979,6 +1010,10 @@
             return document.querySelector("#post-editor");
         }
 
+        function getEditor() {
+            return document.querySelector("#post-editor, .post-editor, [contenteditable='true']");
+        }
+
         function saveEditorSelection() {
             const editor = getEditor();
             if (!editor) return;
@@ -987,93 +1022,200 @@
             if (!editor.contains(sel.anchorNode) || !editor.contains(sel.focusNode)) return;
 
             const range = sel.getRangeAt(0);
-            if (range.collapsed) return;
-
-            editor._savedRange = range.cloneRange();
+            if (!range.collapsed) {
+                editor._savedRange = range.cloneRange();
+            }
         }
 
         function restoreEditorSelection() {
             const editor = getEditor();
-            if (!editor || !editor._savedRange) return;
+            if (!editor || !editor._savedRange) return false;
+
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(editor._savedRange);
+            editor.focus({ preventScroll: true });
+            return true;
         }
 
         function execRichCommand(command, value = null) {
             const editor = getEditor();
             if (!editor) return;
 
-            const hadSelection = !!editor._savedRange;
-            editor.focus();
+            // The toolbar steals focus, so restore the range first.
+            const restored = restoreEditorSelection();
+            if (!restored) editor.focus({ preventScroll: true });
 
-            if (hadSelection) {
-                restoreEditorSelection();
+            try {
+                document.execCommand(command, false, value);
+            } catch (err) {
+                console.warn("Rich editor command failed:", command, err);
             }
 
-            document.execCommand(command, false, value);
             saveEditorSelection();
             editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
-        function attachSelectedLink() {
+        function applyFontSize(size) {
+            // Browser execCommand fontSize accepts 1..7, not px values.
+            // We apply a span afterwards so the exact requested px size is preserved.
             const editor = getEditor();
             if (!editor) return;
-            editor.focus();
-            restoreEditorSelection();
 
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-                showStatus("Pehle word ya line select karein, phir Link button dabayein.");
-                return;
+            if (!restoreEditorSelection()) return;
+
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+
+            const range = sel.getRangeAt(0);
+            const span = document.createElement("span");
+            span.style.fontSize = size + "px";
+
+            try {
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+
+                editor._savedRange = newRange.cloneRange();
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+            } catch (err) {
+                console.warn("Font size failed:", err);
             }
-
-            // Save the exact selection before the browser prompt steals focus.
-            editor._savedRange = selection.getRangeAt(0).cloneRange();
-
-            let url = window.prompt("Link URL (https://...):", "https://");
-            if (url === null) {
-                editor.focus();
-                restoreEditorSelection();
-                return;
-            }
-
-            url = url.trim();
-            if (!/^https?:\/\//i.test(url)) {
-                editor.focus();
-                restoreEditorSelection();
-                showStatus("Link http:// ya https:// se start hona chahiye.");
-                return;
-            }
-
-            // Restore selection AFTER prompt, then create the link.
-            editor.focus();
-            restoreEditorSelection();
-            document.execCommand("createLink", false, url);
-            saveEditorSelection();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
-
-        function cleanEditorPastedFormatting() {
+        function applyFontColor(color) {
             const editor = getEditor();
             if (!editor) return;
-            editor.querySelectorAll('[style]').forEach(el => {
-                const style = el.getAttribute("style") || "";
-                if (/color\s*:/i.test(style)) {
-                    el.style.removeProperty("color");
-                    if (!el.getAttribute("style").trim()) el.removeAttribute("style");
-                }
-            });
-            editor.querySelectorAll('font[color]').forEach(font => {
-                // Keep explicit colours created by our colour tool.
-                if (!font.getAttribute("data-user-color")) {
-                    font.removeAttribute("color");
-                }
-            });
+
+            if (!restoreEditorSelection()) return;
+
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+
+            const range = sel.getRangeAt(0);
+            const span = document.createElement("span");
+            span.style.color = color;
+            span.setAttribute("data-user-color", "1");
+
+            try {
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+
+                editor._savedRange = newRange.cloneRange();
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+            } catch (err) {
+                console.warn("Font color failed:", err);
+            }
+        }
+
+        function applyHighlight(color = "#fff176") {
+            const editor = getEditor();
+            if (!editor) return;
+
+            if (!restoreEditorSelection()) return;
+
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+
+            const range = sel.getRangeAt(0);
+            const span = document.createElement("span");
+            span.style.backgroundColor = color;
+
+            try {
+                const fragment = range.extractContents();
+                span.appendChild(fragment);
+                range.insertNode(span);
+
+                const newRange = document.createRange();
+                newRange.selectNodeContents(span);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+
+                editor._savedRange = newRange.cloneRange();
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+            } catch (err) {
+                console.warn("Highlight failed:", err);
+            }
         }
 
         function setupRichEditor() {
+            const editor = getEditor();
+            if (!editor) return;
+
+            editor.setAttribute("contenteditable", "true");
+            editor.style.color = "#ffffff";
+
+            // Save selection before toolbar controls can steal focus.
+            document.querySelectorAll("#post-toolbar button, #post-toolbar select, #post-toolbar input")
+                .forEach(control => {
+                    control.addEventListener("mousedown", () => saveEditorSelection());
+                });
+
+            document.querySelectorAll("#post-toolbar [data-cmd]").forEach(btn => {
+                btn.addEventListener("click", e => {
+                    e.preventDefault();
+                    execRichCommand(btn.dataset.cmd, btn.dataset.value || null);
+                });
+            });
+
+            const heading = document.querySelector("#post-heading");
+            if (heading) {
+                heading.addEventListener("change", e => {
+                    const value = e.target.value;
+                    if (value) execRichCommand("formatBlock", value);
+                    heading.value = "";
+                });
+            }
+
+            // Font size control: supports 12, 14, 16, 18, 20, 24, 28, 32, 40px.
+            const sizeSelect = document.querySelector("#post-font-size");
+            if (sizeSelect) {
+                sizeSelect.addEventListener("change", e => {
+                    const value = parseInt(e.target.value, 10);
+                    if (Number.isFinite(value)) applyFontSize(value);
+                    e.target.value = "";
+                });
+            }
+
+            const color = document.querySelector("#post-font-color");
+            if (color) {
+                color.addEventListener("input", e => applyFontColor(e.target.value));
+                color.addEventListener("change", e => applyFontColor(e.target.value));
+            }
+
+            const highlight = document.querySelector("#post-highlight");
+            if (highlight) {
+                highlight.addEventListener("mousedown", () => saveEditorSelection());
+                highlight.addEventListener("click", e => {
+                    e.preventDefault();
+                    applyHighlight("#fff176");
+                });
+            }
+
+            editor.addEventListener("mouseup", saveEditorSelection);
+            editor.addEventListener("keyup", saveEditorSelection);
+            editor.addEventListener("input", saveEditorSelection);
+            document.addEventListener("selectionchange", () => {
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+                if (editor.contains(sel.anchorNode) && editor.contains(sel.focusNode)) {
+                    editor._savedRange = sel.getRangeAt(0).cloneRange();
+                }
+            });
+        }
+
+function setupRichEditor() {
             const editor = getEditor();
             if (!editor) return;
 
