@@ -286,6 +286,33 @@
             border-color: var(--neon-blue);
             background: rgba(0,229,255,.08);
         }
+        .rich-color-tool {
+            position: relative;
+            width: 36px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 7px;
+            background: rgba(255,255,255,.04);
+            color: var(--neon-blue);
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .rich-color-tool:hover {
+            border-color: var(--neon-blue);
+            background: rgba(0,229,255,.08);
+        }
+        .rich-color-tool input[type="color"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
         .rich-heading {
             height: 34px;
             padding: 0 8px;
@@ -329,6 +356,42 @@
         .post-content p { margin: 0 0 8px; }
         .post-content ul, .post-content ol { margin: 8px 0 8px 24px; }
 
+    
+        /* Responsive image fitting: supports 16:9, 9:16, 1:1 and any other ratio.
+           The complete image stays visible inside the post window. */
+        .post-content-image,
+        .post-image,
+        .feed-post img,
+        .post-card img {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            max-height: 75vh;
+            object-fit: contain;
+            object-position: center;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 12px;
+        }
+        .post-image-wrap {
+            width: 100%;
+            max-width: 100%;
+            max-height: 75vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: rgba(0,0,0,.12);
+            border-radius: 12px;
+        }
+        .post-image-wrap img {
+            width: 100%;
+            height: auto;
+            max-height: 75vh;
+            object-fit: contain;
+        }
+
     </style>
 </head>
 <body>
@@ -359,6 +422,10 @@
                             <button type="button" class="rich-tool" data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
                             <button type="button" class="rich-tool" data-cmd="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
                             <button type="button" class="rich-tool" data-cmd="highlight" title="Highlight"><i class="fa-solid fa-highlighter"></i></button>
+                            <label class="rich-color-tool" title="Font colour">
+                                <i class="fa-solid fa-font"></i>
+                                <input type="color" id="post-font-color" value="#00e5ff" aria-label="Font colour">
+                            </label>
                             <select id="post-heading" class="rich-heading" title="Heading">
                                 <option value="p">Normal</option>
                                 <option value="h2">Heading 1</option>
@@ -829,9 +896,22 @@
         function sanitizePostHtml(inputHtml = "") {
             const parser = new DOMParser();
             const doc = parser.parseFromString(String(inputHtml), "text/html");
+
+            // Browser execCommand may produce <font color="..."> or <span style="color:...">.
+            // Normalize colour spans into FONT tags so the selected text colour survives save/render.
+            doc.body.querySelectorAll("span[style]").forEach(span => {
+                const color = span.style.color;
+                if (color) {
+                    const font = doc.createElement("font");
+                    font.setAttribute("color", color);
+                    while (span.firstChild) font.appendChild(span.firstChild);
+                    span.replaceWith(font);
+                }
+            });
+
             const allowedTags = new Set([
                 "B","STRONG","I","EM","U","MARK","H2","H3","H4","P","BR",
-                "UL","OL","LI","A"
+                "UL","OL","LI","A","FONT"
             ]);
             const walk = (node) => {
                 [...node.children].forEach(child => {
@@ -849,6 +929,11 @@
                                 if (!["http:", "https:"].includes(url.protocol)) child.removeAttribute("href");
                             } catch (_) {
                                 child.removeAttribute("href");
+                            }
+                        } else if (child.tagName === "FONT" && attr.name.toLowerCase() === "color") {
+                            const value = attr.value.trim();
+                            if (!/^#[0-9a-f]{3,8}$/i.test(value) && !/^(rgb|rgba|hsl|hsla)\(/i.test(value)) {
+                                child.removeAttribute("color");
                             }
                         } else if (child.tagName !== "A" || !["href"].includes(attr.name.toLowerCase())) {
                             child.removeAttribute(attr.name);
@@ -900,20 +985,37 @@
             if (!editor) return;
             editor.focus();
             restoreEditorSelection();
+
             const selection = window.getSelection();
             if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
                 showStatus("Pehle word ya line select karein, phir Link button dabayein.");
                 return;
             }
+
+            // Save the exact selection before the browser prompt steals focus.
+            editor._savedRange = selection.getRangeAt(0).cloneRange();
+
             let url = window.prompt("Link URL (https://...):", "https://");
-            if (url === null) return;
+            if (url === null) {
+                editor.focus();
+                restoreEditorSelection();
+                return;
+            }
+
             url = url.trim();
             if (!/^https?:\/\//i.test(url)) {
+                editor.focus();
+                restoreEditorSelection();
                 showStatus("Link http:// ya https:// se start hona chahiye.");
                 return;
             }
+
+            // Restore selection AFTER prompt, then create the link.
+            editor.focus();
+            restoreEditorSelection();
             document.execCommand("createLink", false, url);
             saveEditorSelection();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
         function setupRichEditor() {
@@ -935,6 +1037,17 @@
             $("#post-heading")?.addEventListener("change", e => {
                 execRichCommand("formatBlock", e.target.value);
                 e.target.value = "p";
+            });
+
+            $("#post-font-color")?.addEventListener("mousedown", e => e.preventDefault());
+            $("#post-font-color")?.addEventListener("input", e => {
+                const editor = getEditor();
+                if (!editor) return;
+                editor.focus();
+                restoreEditorSelection();
+                document.execCommand("foreColor", false, e.target.value);
+                saveEditorSelection();
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
             });
 
             $("#post-link-btn")?.addEventListener("mousedown", e => e.preventDefault());
@@ -1098,7 +1211,7 @@
                 card.className = "glass-panel post-card dynamic-post";
 
                 const image = post.imageUrl
-                    ? `<img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image" onerror="this.style.display='none'; this.nextElementSibling?.classList.add('image-load-error');">
+                    ? `<div class="post-image-wrap"><img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image" onerror="this.style.display='none'; this.nextElementSibling?.classList.add('image-load-error');"></div>
                        <div class="image-load-error" style="display:none;color:var(--text-muted);font-size:12px;margin-top:8px;">Image could not be loaded.</div>`
                     : "";
 
