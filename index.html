@@ -418,22 +418,20 @@
         }
 
     
-        #post-toolbar select {
+        #post-toolbar #post-font-size {
             min-width: 95px;
-            height: 34px;
-            padding: 0 8px;
         }
-        #post-font-size {
-            min-width: 88px !important;
+        #post-editor {
+            color: #ffffff !important;
+            caret-color: #ffffff !important;
         }
-        #post-editor,
-        .post-editor {
-            color: #fff !important;
-            caret-color: #fff;
+        #post-editor a {
+            color: var(--neon-blue) !important;
+            text-decoration: underline;
         }
-        #post-editor * ,
-        .post-editor * {
-            caret-color: #fff;
+        #post-editor mark {
+            background: #fff176 !important;
+            color: #111 !important;
         }
 
     </style>
@@ -470,19 +468,19 @@
                                 <i class="fa-solid fa-font"></i>
                                 <input type="color" id="post-font-color" value="#00e5ff" aria-label="Font colour">
                             </label>
-                            <select id="post-font-size" title="Text size" aria-label="Text size">
-                <option value="">Size</option>
-                <option value="12">12 px</option>
-                <option value="14">14 px</option>
-                <option value="16">16 px</option>
-                <option value="18">18 px</option>
-                <option value="20">20 px</option>
-                <option value="24">24 px</option>
-                <option value="28">28 px</option>
-                <option value="32">32 px</option>
-                <option value="40">40 px</option>
-            </select>
-            <select id="post-heading" class="rich-heading" title="Heading">
+                            <select id="post-font-size" class="rich-heading" title="Text size" aria-label="Text size">
+                                <option value="">Text size</option>
+                                <option value="12">12 px</option>
+                                <option value="14">14 px</option>
+                                <option value="16">16 px</option>
+                                <option value="18">18 px</option>
+                                <option value="20">20 px</option>
+                                <option value="24">24 px</option>
+                                <option value="28">28 px</option>
+                                <option value="32">32 px</option>
+                                <option value="40">40 px</option>
+                            </select>
+                            <select id="post-heading" class="rich-heading" title="Heading">
                                 <option value="p">Normal</option>
                                 <option value="h2">Heading 1</option>
                                 <option value="h3">Heading 2</option>
@@ -953,22 +951,11 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(String(inputHtml), "text/html");
 
-            // Browser execCommand may produce <font color="..."> or <span style="color:...">.
-            // Normalize colour spans into FONT tags so the selected text colour survives save/render.
-            doc.body.querySelectorAll("span[style]").forEach(span => {
-                const color = span.style.color;
-                if (color) {
-                    const font = doc.createElement("font");
-                    font.setAttribute("color", color);
-                    while (span.firstChild) font.appendChild(span.firstChild);
-                    span.replaceWith(font);
-                }
-            });
-
             const allowedTags = new Set([
                 "B","STRONG","I","EM","U","MARK","H2","H3","H4","P","BR",
-                "UL","OL","LI","A","FONT"
+                "UL","OL","LI","A","SPAN","FONT"
             ]);
+
             const walk = (node) => {
                 [...node.children].forEach(child => {
                     if (!allowedTags.has(child.tagName)) {
@@ -978,23 +965,38 @@
                         walk(node);
                         return;
                     }
+
                     [...child.attributes].forEach(attr => {
-                        if (child.tagName === "A" && attr.name.toLowerCase() === "href") {
+                        const name = attr.name.toLowerCase();
+                        if (child.tagName === "A" && name === "href") {
                             try {
                                 const url = new URL(attr.value, location.href);
                                 if (!["http:", "https:"].includes(url.protocol)) child.removeAttribute("href");
                             } catch (_) {
                                 child.removeAttribute("href");
                             }
-                        } else if (child.tagName === "FONT" && attr.name.toLowerCase() === "color") {
+                        } else if (child.tagName === "SPAN" && name === "style") {
+                            const clean = [];
+                            const style = child.style;
+                            if (style.fontSize) clean.push(`font-size:${style.fontSize}`);
+                            if (style.color) clean.push(`color:${style.color}`);
+                            if (style.backgroundColor) clean.push(`background-color:${style.backgroundColor}`);
+                            if (clean.length) child.setAttribute("style", clean.join(";"));
+                            else child.removeAttribute("style");
+                        } else if (child.tagName === "FONT" && name === "color") {
                             const value = attr.value.trim();
-                            if (!/^#[0-9a-f]{3,8}$/i.test(value) && !/^(rgb|rgba|hsl|hsla)\(/i.test(value)) {
+                            if (!/^#[0-9a-f]{3,8}$/i.test(value) &&
+                                !/^(rgb|rgba|hsl|hsla)\(/i.test(value)) {
                                 child.removeAttribute("color");
                             }
-                        } else if (child.tagName !== "A" || !["href"].includes(attr.name.toLowerCase())) {
+                        } else if (child.tagName === "A" && ["target","rel"].includes(name)) {
+                            // Re-added below.
+                            child.removeAttribute(attr.name);
+                        } else {
                             child.removeAttribute(attr.name);
                         }
                     });
+
                     if (child.tagName === "A" && child.hasAttribute("href")) {
                         child.setAttribute("target", "_blank");
                         child.setAttribute("rel", "noopener noreferrer");
@@ -1002,16 +1004,13 @@
                     walk(child);
                 });
             };
+
             walk(doc.body);
             return doc.body.innerHTML.trim();
         }
 
         function getEditor() {
             return document.querySelector("#post-editor");
-        }
-
-        function getEditor() {
-            return document.querySelector("#post-editor, .post-editor, [contenteditable='true']");
         }
 
         function saveEditorSelection() {
@@ -1022,268 +1021,281 @@
             if (!editor.contains(sel.anchorNode) || !editor.contains(sel.focusNode)) return;
 
             const range = sel.getRangeAt(0);
-            if (!range.collapsed) {
-                editor._savedRange = range.cloneRange();
-            }
+            if (!range.collapsed) editor._savedRange = range.cloneRange();
         }
 
         function restoreEditorSelection() {
             const editor = getEditor();
             if (!editor || !editor._savedRange) return false;
-
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(editor._savedRange);
-            editor.focus({ preventScroll: true });
             return true;
         }
 
-        function execRichCommand(command, value = null) {
+        function selectedRange() {
             const editor = getEditor();
-            if (!editor) return;
-
-            // The toolbar steals focus, so restore the range first.
-            const restored = restoreEditorSelection();
-            if (!restored) editor.focus({ preventScroll: true });
-
-            try {
-                document.execCommand(command, false, value);
-            } catch (err) {
-                console.warn("Rich editor command failed:", command, err);
-            }
-
-            saveEditorSelection();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
+            if (!editor || !restoreEditorSelection()) return null;
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+            return sel.getRangeAt(0).cloneRange();
         }
 
-        function applyFontSize(size) {
-            // Browser execCommand fontSize accepts 1..7, not px values.
-            // We apply a span afterwards so the exact requested px size is preserved.
+        function wrapSelected(tagName, styles = {}) {
+            const editor = getEditor();
+            const range = selectedRange();
+            if (!editor || !range) {
+                showStatus("Pehle text select karein.");
+                return false;
+            }
+
+            const el = document.createElement(tagName);
+            Object.entries(styles).forEach(([k,v]) => el.style[k] = v);
+
+            const fragment = range.extractContents();
+            el.appendChild(fragment);
+            range.insertNode(el);
+
+            const newRange = document.createRange();
+            newRange.selectNodeContents(el);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+            editor._savedRange = newRange.cloneRange();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+            return true;
+        }
+
+        function applyInlineFormat(cmd) {
             const editor = getEditor();
             if (!editor) return;
 
-            if (!restoreEditorSelection()) return;
+            if (cmd === "bold") return wrapSelected("strong");
+            if (cmd === "italic") return wrapSelected("em");
+            if (cmd === "underline") return wrapSelected("u");
+            if (cmd === "highlight") return wrapSelected("mark", { backgroundColor: "#fff176" });
+
+            if (cmd === "insertUnorderedList" || cmd === "insertOrderedList") {
+                if (restoreEditorSelection()) {
+                    try {
+                        document.execCommand(cmd, false, null);
+                        saveEditorSelection();
+                        editor.dispatchEvent(new Event("input", { bubbles: true }));
+                        return true;
+                    } catch (_) {}
+                }
+                showStatus("Pehle list ke liye text select karein.");
+                return false;
+            }
+
+            if (cmd === "removeFormat") {
+                const range = selectedRange();
+                if (!range) {
+                    showStatus("Pehle text select karein.");
+                    return false;
+                }
+                const fragment = range.extractContents();
+                const tmp = document.createElement("div");
+                tmp.appendChild(fragment);
+                tmp.querySelectorAll("strong,b,em,i,u,mark,span,font").forEach(node => {
+                    const parent = node.parentNode;
+                    while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                    node.remove();
+                });
+                while (tmp.firstChild) range.insertNode(tmp.lastChild);
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+                saveEditorSelection();
+                return true;
+            }
+            return false;
+        }
+
+        function applyHeading(tag) {
+            const editor = getEditor();
+            if (!editor || !restoreEditorSelection()) {
+                showStatus("Pehle text select karein.");
+                return;
+            }
 
             const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-
+            if (!sel.rangeCount) return;
             const range = sel.getRangeAt(0);
-            const span = document.createElement("span");
-            span.style.fontSize = size + "px";
 
-            try {
-                const fragment = range.extractContents();
-                span.appendChild(fragment);
-                range.insertNode(span);
-
-                const newRange = document.createRange();
-                newRange.selectNodeContents(span);
+            // If the selection is inside one existing block, change that block.
+            let node = sel.anchorNode;
+            if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+            const block = node?.closest?.("p,h2,h3,h4");
+            if (block && editor.contains(block) && block.contains(sel.focusNode)) {
+                const replacement = document.createElement(tag);
+                while (block.firstChild) replacement.appendChild(block.firstChild);
+                block.replaceWith(replacement);
+                const nr = document.createRange();
+                nr.selectNodeContents(replacement);
                 sel.removeAllRanges();
-                sel.addRange(newRange);
-
-                editor._savedRange = newRange.cloneRange();
+                sel.addRange(nr);
+                editor._savedRange = nr.cloneRange();
                 editor.dispatchEvent(new Event("input", { bubbles: true }));
-            } catch (err) {
-                console.warn("Font size failed:", err);
+                return;
             }
+
+            // Otherwise wrap the selected content in the requested heading.
+            wrapSelected(tag);
+        }
+
+        function applyFontSize(px) {
+            wrapSelected("span", { fontSize: px + "px" });
         }
 
         function applyFontColor(color) {
-            const editor = getEditor();
-            if (!editor) return;
-
-            if (!restoreEditorSelection()) return;
-
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-
-            const range = sel.getRangeAt(0);
-            const span = document.createElement("span");
-            span.style.color = color;
-            span.setAttribute("data-user-color", "1");
-
-            try {
-                const fragment = range.extractContents();
-                span.appendChild(fragment);
-                range.insertNode(span);
-
-                const newRange = document.createRange();
-                newRange.selectNodeContents(span);
-                sel.removeAllRanges();
-                sel.addRange(newRange);
-
-                editor._savedRange = newRange.cloneRange();
-                editor.dispatchEvent(new Event("input", { bubbles: true }));
-            } catch (err) {
-                console.warn("Font color failed:", err);
-            }
+            wrapSelected("span", { color: color });
         }
 
-        function applyHighlight(color = "#fff176") {
+        function applyLink() {
             const editor = getEditor();
-            if (!editor) return;
+            const range = selectedRange();
+            if (!editor || !range) {
+                showStatus("Pehle word ya line select karein, phir Link button dabayein.");
+                return;
+            }
 
-            if (!restoreEditorSelection()) return;
+            editor._savedRange = range.cloneRange();
+            let url = window.prompt("Link URL (https://...):", "https://");
+            if (url === null) {
+                restoreEditorSelection();
+                return;
+            }
+            url = url.trim();
+            if (!/^https?:\/\//i.test(url)) {
+                showStatus("Link http:// ya https:// se start hona chahiye.");
+                restoreEditorSelection();
+                return;
+            }
+
+            const r = selectedRange();
+            if (!r) return;
+            const a = document.createElement("a");
+            a.href = url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.appendChild(r.extractContents());
+            r.insertNode(a);
+
+            const nr = document.createRange();
+            nr.selectNodeContents(a);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(nr);
+            editor._savedRange = nr.cloneRange();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        function removeSelectedLink() {
+            const editor = getEditor();
+            const range = selectedRange();
+            if (!editor || !range) {
+                showStatus("Pehle linked text select karein.");
+                return;
+            }
+            editor.querySelectorAll("a").forEach(a => {
+                try {
+                    if (range.intersectsNode(a)) {
+                        const parent = a.parentNode;
+                        while (a.firstChild) parent.insertBefore(a.firstChild, a);
+                        a.remove();
+                    }
+                } catch (_) {}
+            });
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+            saveEditorSelection();
+        }
+
+        function clearSelectedFormat() {
+            const editor = getEditor();
+            const range = selectedRange();
+            if (!editor || !range) {
+                showStatus("Pehle text select karein.");
+                return;
+            }
+            const frag = range.extractContents();
+            const holder = document.createElement("div");
+            holder.appendChild(frag);
+
+            holder.querySelectorAll("strong,b,em,i,u,mark,span,font").forEach(node => {
+                const parent = node.parentNode;
+                while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                node.remove();
+            });
+
+            while (holder.firstChild) range.insertNode(holder.firstChild);
 
             const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-
-            const range = sel.getRangeAt(0);
-            const span = document.createElement("span");
-            span.style.backgroundColor = color;
-
-            try {
-                const fragment = range.extractContents();
-                span.appendChild(fragment);
-                range.insertNode(span);
-
-                const newRange = document.createRange();
-                newRange.selectNodeContents(span);
-                sel.removeAllRanges();
-                sel.addRange(newRange);
-
-                editor._savedRange = newRange.cloneRange();
-                editor.dispatchEvent(new Event("input", { bubbles: true }));
-            } catch (err) {
-                console.warn("Highlight failed:", err);
-            }
+            sel.removeAllRanges();
+            sel.addRange(range);
+            editor._savedRange = range.cloneRange();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
         function setupRichEditor() {
             const editor = getEditor();
             if (!editor) return;
 
-            editor.setAttribute("contenteditable", "true");
-            editor.style.color = "#ffffff";
+            const toolbar = document.querySelector("#post-toolbar");
+            if (!toolbar) return;
 
-            // Save selection before toolbar controls can steal focus.
-            document.querySelectorAll("#post-toolbar button, #post-toolbar select, #post-toolbar input")
-                .forEach(control => {
-                    control.addEventListener("mousedown", () => saveEditorSelection());
-                });
+            // Save the selection BEFORE the browser moves focus to any toolbar control.
+            toolbar.querySelectorAll("button,select,input").forEach(control => {
+                control.addEventListener("mousedown", () => saveEditorSelection());
+            });
 
-            document.querySelectorAll("#post-toolbar [data-cmd]").forEach(btn => {
+            toolbar.querySelectorAll("[data-cmd]").forEach(btn => {
                 btn.addEventListener("click", e => {
                     e.preventDefault();
-                    execRichCommand(btn.dataset.cmd, btn.dataset.value || null);
+                    applyInlineFormat(btn.dataset.cmd);
                 });
             });
 
             const heading = document.querySelector("#post-heading");
-            if (heading) {
-                heading.addEventListener("change", e => {
-                    const value = e.target.value;
-                    if (value) execRichCommand("formatBlock", value);
-                    heading.value = "";
-                });
-            }
+            heading?.addEventListener("change", e => {
+                const value = e.target.value;
+                if (value && value !== "p") applyHeading(value);
+                e.target.value = "p";
+            });
 
-            // Font size control: supports 12, 14, 16, 18, 20, 24, 28, 32, 40px.
-            const sizeSelect = document.querySelector("#post-font-size");
-            if (sizeSelect) {
-                sizeSelect.addEventListener("change", e => {
-                    const value = parseInt(e.target.value, 10);
-                    if (Number.isFinite(value)) applyFontSize(value);
-                    e.target.value = "";
-                });
-            }
+            const size = document.querySelector("#post-font-size");
+            size?.addEventListener("change", e => {
+                const value = parseInt(e.target.value, 10);
+                if (Number.isFinite(value)) applyFontSize(value);
+                e.target.value = "";
+            });
 
             const color = document.querySelector("#post-font-color");
-            if (color) {
-                color.addEventListener("input", e => applyFontColor(e.target.value));
-                color.addEventListener("change", e => applyFontColor(e.target.value));
-            }
+            color?.addEventListener("input", e => {
+                applyFontColor(e.target.value);
+            });
 
-            const highlight = document.querySelector("#post-highlight");
-            if (highlight) {
-                highlight.addEventListener("mousedown", () => saveEditorSelection());
-                highlight.addEventListener("click", e => {
-                    e.preventDefault();
-                    applyHighlight("#fff176");
-                });
-            }
+            document.querySelector("#post-link-btn")?.addEventListener("click", e => {
+                e.preventDefault();
+                applyLink();
+            });
+
+            document.querySelector("#post-unlink-btn")?.addEventListener("click", e => {
+                e.preventDefault();
+                removeSelectedLink();
+            });
+
+            document.querySelector("#post-clear-format")?.addEventListener("click", e => {
+                e.preventDefault();
+                clearSelectedFormat();
+            });
 
             editor.addEventListener("mouseup", saveEditorSelection);
             editor.addEventListener("keyup", saveEditorSelection);
             editor.addEventListener("input", saveEditorSelection);
+
             document.addEventListener("selectionchange", () => {
                 const sel = window.getSelection();
                 if (!sel || !sel.rangeCount || sel.isCollapsed) return;
                 if (editor.contains(sel.anchorNode) && editor.contains(sel.focusNode)) {
-                    editor._savedRange = sel.getRangeAt(0).cloneRange();
-                }
-            });
-        }
-
-function setupRichEditor() {
-            const editor = getEditor();
-            if (!editor) return;
-
-            // Prevent toolbar clicks from destroying the selected text.
-            document.querySelectorAll("#post-toolbar .rich-tool").forEach(btn => {
-                btn.addEventListener("mousedown", e => {
-                    saveEditorSelection();
-                    e.preventDefault();
-                });
-            });
-
-            document.querySelectorAll("#post-toolbar [data-cmd]").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const cmd = btn.dataset.cmd;
-                    if (cmd === "highlight") {
-                        execRichCommand("hiliteColor", "#fff176");
-                        return;
-                    }
-                    execRichCommand(cmd);
-                });
-            });
-
-            $("#post-heading")?.addEventListener("mousedown", () => {
-                saveEditorSelection();
-            });
-            $("#post-heading")?.addEventListener("change", e => {
-                const value = e.target.value;
-                execRichCommand("formatBlock", value);
-                e.target.value = "p";
-            });
-
-            $("#post-font-color")?.addEventListener("mousedown", e => {
-                saveEditorSelection();
-                e.preventDefault();
-            });
-            $("#post-font-color")?.addEventListener("input", e => {
-                const editor = getEditor();
-                if (!editor) return;
-                editor.focus();
-                restoreEditorSelection();
-                document.execCommand("foreColor", false, e.target.value);
-                editor.querySelectorAll("font[color]").forEach(font => font.setAttribute("data-user-color", "1"));
-                saveEditorSelection();
-                editor.dispatchEvent(new Event("input", { bubbles: true }));
-            });
-
-            $("#post-link-btn")?.addEventListener("mousedown", e => e.preventDefault());
-            $("#post-link-btn")?.addEventListener("click", attachSelectedLink);
-
-            $("#post-unlink-btn")?.addEventListener("mousedown", e => e.preventDefault());
-            $("#post-unlink-btn")?.addEventListener("click", () => execRichCommand("unlink"));
-
-            $("#post-clear-format")?.addEventListener("mousedown", e => e.preventDefault());
-            $("#post-clear-format")?.addEventListener("click", () => execRichCommand("removeFormat"));
-
-            editor.addEventListener("mouseup", saveEditorSelection);
-            editor.addEventListener("keyup", saveEditorSelection);
-            editor.addEventListener("input", () => {
-                cleanEditorPastedFormatting();
-                saveEditorSelection();
-            });
-            editor.addEventListener("paste", () => {
-                setTimeout(cleanEditorPastedFormatting, 0);
-            });
-            document.addEventListener("selectionchange", () => {
-                const sel = window.getSelection();
-                if (!sel || !sel.rangeCount || !sel.anchorNode) return;
-                if (editor.contains(sel.anchorNode) && editor.contains(sel.focusNode) && !sel.isCollapsed) {
                     editor._savedRange = sel.getRangeAt(0).cloneRange();
                 }
             });
