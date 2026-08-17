@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrindFlow</title>
+    <!-- Like / Comment / Share / Favorite UI v3 -->
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -226,11 +227,107 @@
         }
         .post-actions {
             display: flex;
-            gap: 10px;
+            align-items: center;
+            gap: 4px;
             margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,.07);
         }
         .post-actions:empty {
             display: none;
+        }
+        .post-action-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            color: #fff !important;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
+            line-height: 1;
+            transition: background .18s ease, color .18s ease, transform .18s ease;
+        }
+        .post-action-btn i {
+            color: inherit !important;
+            font-size: 14px;
+        }
+        .post-action-btn:hover {
+            background: rgba(255,255,255,.08) !important;
+            color: #fff !important;
+        }
+        .post-action-btn:active {
+            transform: scale(.97);
+        }
+        .post-action-btn.active,
+        .post-action-btn.favorited {
+            color: #fff !important;
+            background: rgba(255,255,255,.10) !important;
+        }
+        .post-action-btn .count {
+            color: #fff;
+            opacity: .9;
+        }
+        .post-share-box {
+            display: none;
+            margin-top: 8px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 10px;
+            background: rgba(255,255,255,.025);
+            gap: 8px;
+            align-items: center;
+        }
+        .post-share-box.show {
+            display: flex;
+        }
+        .post-share-url {
+            flex: 1;
+            min-width: 0;
+            color: #fff;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-decoration: none;
+        }
+        .post-share-url:hover {
+            text-decoration: underline;
+        }
+        .post-share-copy,
+        .post-share-open {
+            flex: 0 0 auto;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.16);
+            color: #fff;
+            border-radius: 7px;
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+        .post-share-copy:hover,
+        .post-share-open:hover {
+            background: rgba(255,255,255,.08);
+        }
+        @media (max-width: 600px) {
+            .post-actions {
+                gap: 2px;
+            }
+            .post-action-btn {
+                padding: 8px 7px;
+                font-size: 13px;
+            }
+            .post-share-box {
+                flex-wrap: wrap;
+            }
+            .post-share-url {
+                flex-basis: 100%;
+            }
         }
 
         /* Section Containers */
@@ -1891,24 +1988,63 @@
 
                         if (action === "share") {
                             const shareUrl = `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`;
-                            try {
-                                if (navigator.share) {
-                                    await navigator.share({
-                                        title: "FrindFlow Post",
-                                        url: shareUrl
-                                    });
-                                } else if (navigator.clipboard?.writeText) {
-                                    await navigator.clipboard.writeText(shareUrl);
-                                    showStatus("Post link copied.", true);
-                                } else {
-                                    window.prompt("Copy this post link:", shareUrl);
+                            const card = bar.closest(".post-card");
+
+                            // Show the share link directly under the action buttons.
+                            let shareBox = card?.querySelector(".post-share-box");
+                            if (!shareBox) {
+                                shareBox = document.createElement("div");
+                                shareBox.className = "post-share-box";
+                                shareBox.innerHTML = `
+                                    <a class="post-share-url" target="_blank" rel="noopener noreferrer"></a>
+                                    <button type="button" class="post-share-copy">Copy</button>
+                                    <a class="post-share-open" target="_blank" rel="noopener noreferrer">Open</a>
+                                `;
+                                bar.insertAdjacentElement("afterend", shareBox);
+
+                                const urlEl = shareBox.querySelector(".post-share-url");
+                                const openEl = shareBox.querySelector(".post-share-open");
+                                const copyEl = shareBox.querySelector(".post-share-copy");
+                                if (urlEl) {
+                                    urlEl.href = shareUrl;
+                                    urlEl.textContent = shareUrl;
+                                }
+                                if (openEl) openEl.href = shareUrl;
+
+                                copyEl?.addEventListener("click", async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(shareUrl);
+                                        copyEl.textContent = "Copied";
+                                        setTimeout(() => { copyEl.textContent = "Copy"; }, 1200);
+                                    } catch (_) {
+                                        window.prompt("Copy this post link:", shareUrl);
+                                    }
+                                });
+                            }
+
+                            const willShow = !shareBox.classList.contains("show");
+                            shareBox.classList.toggle("show", willShow);
+
+                            if (willShow) {
+                                try {
+                                    if (navigator.share) {
+                                        // On supported devices, also offer the native share sheet.
+                                        await navigator.share({
+                                            title: "FrindFlow Post",
+                                            url: shareUrl
+                                        });
+                                    }
+                                } catch (_) {
+                                    // Closing/cancelling native sharing must not hide the visible link.
                                 }
 
-                                const old = Number(countEl?.textContent || 0);
-                                if (countEl) countEl.textContent = String(old + 1);
-                                await changePostCounter(postId, "shares", 1);
-                            } catch (_) {
-                                // User cancelled the native share dialog.
+                                const alreadyCounted = button.dataset.shared === "1";
+                                if (!alreadyCounted) {
+                                    button.dataset.shared = "1";
+                                    const old = Number(countEl?.textContent || 0);
+                                    if (countEl) countEl.textContent = String(old + 1);
+                                    await changePostCounter(postId, "shares", 1);
+                                }
                             }
                             return;
                         }
