@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrindFlow</title>
-    <!-- Like / Comment / Share / Favorite UI v3 -->
+    <!-- Like / Comment / Share / Favorite UI v3 + Image Zoom v5 -->
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -225,7 +225,95 @@
             margin-top: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .post-card.shared-target {
+        
+        .post-image-wrap {
+            position: relative;
+            overflow: hidden;
+            cursor: zoom-in;
+            border-radius: 12px;
+        }
+        .post-image-wrap img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+            transition: transform .18s ease;
+        }
+        .post-image-wrap:hover img {
+            transform: scale(1.025);
+        }
+        .post-image-zoom-hint {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 9px;
+            border-radius: 999px;
+            background: rgba(0,0,0,.62);
+            color: #fff;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity .18s ease, transform .18s ease;
+        }
+        .post-image-wrap:hover .post-image-zoom-hint {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .image-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(0,0,0,.92);
+        }
+        .image-lightbox.show {
+            display: flex;
+        }
+        .image-lightbox img {
+            max-width: 96vw;
+            max-height: 92vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 12px 60px rgba(0,0,0,.55);
+            cursor: zoom-out;
+        }
+        .image-lightbox-close {
+            position: fixed;
+            top: 16px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            font-size: 25px;
+            cursor: pointer;
+            z-index: 100000;
+        }
+        .image-lightbox-close:hover {
+            background: rgba(255,255,255,.22);
+        }
+        body.image-lightbox-open {
+            overflow: hidden;
+        }
+        @media (max-width: 600px) {
+            .image-lightbox {
+                padding: 10px;
+            }
+        }
+
+.post-card.shared-target {
             outline: 2px solid rgba(0, 220, 255, .55);
             box-shadow: 0 0 0 4px rgba(0, 220, 255, .08), 0 12px 40px rgba(0,0,0,.18);
         }
@@ -2239,5 +2327,67 @@
 
         listenToPosts();
     </script>
+
+    <div id="imageLightbox" class="image-lightbox" aria-hidden="true">
+        <button type="button" class="image-lightbox-close" aria-label="Close image">&times;</button>
+        <img id="imageLightboxImg" src="" alt="Full screen image">
+    </div>
+
+    <script>
+    (() => {
+        const lightbox = document.getElementById("imageLightbox");
+        const lightboxImg = document.getElementById("imageLightboxImg");
+        const closeBtn = lightbox?.querySelector(".image-lightbox-close");
+
+        function closeImageLightbox() {
+            if (!lightbox) return;
+            lightbox.classList.remove("show");
+            lightbox.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("image-lightbox-open");
+            if (lightboxImg) lightboxImg.src = "";
+        }
+
+        function openImageLightbox(src, alt = "") {
+            if (!lightbox || !lightboxImg || !src) return;
+            lightboxImg.src = src;
+            lightboxImg.alt = alt || "Full screen image";
+            lightbox.classList.add("show");
+            lightbox.setAttribute("aria-hidden", "false");
+            document.body.classList.add("image-lightbox-open");
+        }
+
+        document.addEventListener("click", (event) => {
+            const wrap = event.target.closest(".post-image-wrap");
+            if (wrap) {
+                const img = wrap.querySelector("img");
+                if (img?.src) openImageLightbox(img.currentSrc || img.src, img.alt);
+                return;
+            }
+
+            if (event.target === lightbox || event.target === closeBtn || event.target.closest(".image-lightbox-close")) {
+                closeImageLightbox();
+                return;
+            }
+
+            if (event.target === lightboxImg) {
+                closeImageLightbox();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            const wrap = event.target.closest?.(".post-image-wrap");
+            if (wrap && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                const img = wrap.querySelector("img");
+                if (img?.src) openImageLightbox(img.currentSrc || img.src, img.alt);
+                return;
+            }
+            if (event.key === "Escape" && lightbox?.classList.contains("show")) {
+                closeImageLightbox();
+            }
+        });
+    })();
+    </script>
+
 </body>
 </html>
