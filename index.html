@@ -225,6 +225,10 @@
             margin-top: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .post-card.shared-target {
+            outline: 2px solid rgba(0, 220, 255, .55);
+            box-shadow: 0 0 0 4px rgba(0, 220, 255, .08), 0 12px 40px rgba(0,0,0,.18);
+        }
         .post-actions {
             display: flex;
             align-items: center;
@@ -2026,18 +2030,8 @@
                             shareBox.classList.toggle("show", willShow);
 
                             if (willShow) {
-                                try {
-                                    if (navigator.share) {
-                                        // On supported devices, also offer the native share sheet.
-                                        await navigator.share({
-                                            title: "FrindFlow Post",
-                                            url: shareUrl
-                                        });
-                                    }
-                                } catch (_) {
-                                    // Closing/cancelling native sharing must not hide the visible link.
-                                }
-
+                                // The post-specific link is always shown in the share box.
+                                // Native sharing is intentionally not opened automatically.
                                 const alreadyCounted = button.dataset.shared === "1";
                                 if (!alreadyCounted) {
                                     button.dataset.shared = "1";
@@ -2121,6 +2115,8 @@
             posts.forEach(post => {
                 const card = document.createElement("div");
                 card.className = "glass-panel post-card dynamic-post";
+                card.id = `post-${String(post.id)}`;
+                card.dataset.postId = String(post.id);
 
                 const image = post.imageUrl
                     ? `<div class="post-image-wrap"><img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image" onerror="this.style.display='none'; this.nextElementSibling?.classList.add('image-load-error');"></div>
@@ -2163,7 +2159,31 @@
 
             createBox.after(fragment);
             bindPostActions(feed);
+            focusSharedPost();
         }
+
+        function focusSharedPost() {
+            const hash = window.location.hash || "";
+            if (!hash.startsWith("#post-")) return;
+
+            const postId = decodeURIComponent(hash.slice("#post-".length));
+            if (!postId) return;
+
+            const card = document.getElementById(`post-${postId}`);
+            if (!card) return;
+
+            document.querySelectorAll(".post-card.shared-target").forEach(el => {
+                el.classList.remove("shared-target");
+            });
+            card.classList.add("shared-target");
+
+            setTimeout(() => {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 80);
+        }
+
+        window.addEventListener("hashchange", focusSharedPost);
+        window.addEventListener("load", () => setTimeout(focusSharedPost, 300));
 
         function listenToPosts() {
             // Do not use Firestore orderBy here: older posts without createdAt
