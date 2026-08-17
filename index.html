@@ -83,7 +83,7 @@
         main {
             flex: 1;
             padding: 30px 15px;
-            max-width: 800px;
+            max-width: min(var(--content-width, 800px), calc(100vw - 30px));
             margin: 0 auto;
             width: 100%;
         }
@@ -434,6 +434,25 @@
             color: #111 !important;
         }
 
+    
+        /* Pasted Word/Google/website backgrounds must not create white boxes. */
+        #post-editor [style*="background"],
+        .post-editor [style*="background"] {
+            background-color: transparent !important;
+        }
+        #post-editor mark,
+        .post-editor mark {
+            background: #fff176 !important;
+            color: #111 !important;
+        }
+        .post-content [style*="background-color: rgb(255, 255, 255)"],
+        .post-content [style*="background-color:#fff"],
+        .post-content [style*="background-color: #fff"],
+        .post-content [style*="background-color:white"],
+        .post-content [style*="background-color: white"] {
+            background-color: transparent !important;
+        }
+
     </style>
 </head>
 <body>
@@ -560,6 +579,39 @@
                     <button id="admin-exit" class="btn-danger">
                         <i class="fa-solid fa-right-from-bracket"></i> Exit Admin
                     </button>
+                </div>
+
+                <div id="admin-layout-settings" style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
+                    <h4 style="color:white;margin-bottom:8px;">
+                        <i class="fa-solid fa-arrows-left-right"></i> Middle Window Size
+                    </h4>
+                    <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">
+                        Header aur footer par koi asar nahi hoga. Sirf beech ka content/feed window chhota ya bara hoga.
+                    </p>
+
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <input id="admin-content-width" type="range" min="560" max="1200" step="10" value="800"
+                               style="flex:1;min-width:220px;accent-color:var(--neon-gold);">
+                        <strong id="admin-content-width-value" style="min-width:75px;color:var(--neon-gold);">800 px</strong>
+                    </div>
+
+                    <div id="admin-layout-preview" style="margin-top:14px;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.02);">
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:7px;text-align:center;">Live Preview</div>
+                        <div id="admin-layout-preview-window"
+                             style="height:72px;margin:0 auto;border:2px solid var(--neon-blue);border-radius:8px;background:linear-gradient(90deg,rgba(176,38,255,.10),rgba(0,229,255,.10));display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;overflow:hidden;">
+                            Middle content window
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                        <button id="admin-layout-save" class="btn-neon-gold">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Window Size
+                        </button>
+                        <button id="admin-layout-reset" class="btn-danger" type="button">
+                            <i class="fa-solid fa-rotate-left"></i> Reset 800 px
+                        </button>
+                    </div>
+                    <div id="admin-layout-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
                 </div>
 
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
@@ -764,8 +816,111 @@
             }
         }
 
+
+        const DEFAULT_CONTENT_WIDTH = 800;
+        const MIN_CONTENT_WIDTH = 560;
+        const MAX_CONTENT_WIDTH = 1200;
+        const CONTENT_WIDTH_KEY = "frindflow_content_width";
+
+        function clampContentWidth(value) {
+            const n = parseInt(value, 10);
+            if (!Number.isFinite(n)) return DEFAULT_CONTENT_WIDTH;
+            return Math.min(MAX_CONTENT_WIDTH, Math.max(MIN_CONTENT_WIDTH, n));
+        }
+
+        function applyContentWidth(value) {
+            const width = clampContentWidth(value);
+            document.documentElement.style.setProperty("--content-width", `${width}px`);
+
+            const slider = $("#admin-content-width");
+            const valueLabel = $("#admin-content-width-value");
+            const preview = $("#admin-layout-preview-window");
+
+            if (slider) slider.value = String(width);
+            if (valueLabel) valueLabel.textContent = `${width} px`;
+
+            // Preview uses the same proportional width as the real middle window.
+            if (preview) {
+                const previewMax = 520;
+                const ratio = (width - MIN_CONTENT_WIDTH) / (MAX_CONTENT_WIDTH - MIN_CONTENT_WIDTH);
+                const previewWidth = Math.round(260 + ratio * (previewMax - 260));
+                preview.style.width = `${previewWidth}px`;
+            }
+
+            return width;
+        }
+
+        async function loadContentWidthSetting() {
+            let width = DEFAULT_CONTENT_WIDTH;
+
+            try {
+                const local = localStorage.getItem(CONTENT_WIDTH_KEY);
+                if (local) width = clampContentWidth(local);
+            } catch (_) {}
+
+            applyContentWidth(width);
+
+            try {
+                const snap = await getDoc(doc(db, "siteSettings", "layout"));
+                if (snap.exists() && Number.isFinite(Number(snap.data()?.contentWidth))) {
+                    width = clampContentWidth(snap.data().contentWidth);
+                    try { localStorage.setItem(CONTENT_WIDTH_KEY, String(width)); } catch (_) {}
+                    applyContentWidth(width);
+                }
+            } catch (e) {
+                console.warn("Layout setting could not be loaded:", e);
+            }
+        }
+
+        async function saveContentWidthSetting() {
+            if (!isAdmin()) return;
+
+            const slider = $("#admin-content-width");
+            const width = applyContentWidth(slider?.value || DEFAULT_CONTENT_WIDTH);
+
+            try { localStorage.setItem(CONTENT_WIDTH_KEY, String(width)); } catch (_) {}
+
+            try {
+                await setDoc(doc(db, "siteSettings", "layout"), {
+                    contentWidth: width,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                const status = $("#admin-layout-status");
+                if (status) status.textContent = `Saved: ${width}px. Middle window updated.`;
+                showStatus(`Middle window set to ${width}px.`, true);
+            } catch (e) {
+                const status = $("#admin-layout-status");
+                if (status) status.textContent = `Applied on this browser (${width}px), but cloud save failed.`;
+                showStatus("Window changed here, but cloud save failed: " + e.message);
+            }
+        }
+
+        function setupAdminLayoutSettings() {
+            const slider = $("#admin-content-width");
+            if (!slider) return;
+
+            slider.addEventListener("input", () => {
+                applyContentWidth(slider.value);
+                const status = $("#admin-layout-status");
+                if (status) status.textContent = "Live preview — click Save Window Size to keep this setting.";
+            });
+
+            $("#admin-layout-save")?.addEventListener("click", saveContentWidthSetting);
+
+            $("#admin-layout-reset")?.addEventListener("click", () => {
+                applyContentWidth(DEFAULT_CONTENT_WIDTH);
+                const status = $("#admin-layout-status");
+                if (status) status.textContent = "Preview reset to 800px. Click Save to keep it.";
+            });
+
+            applyContentWidth(slider.value || DEFAULT_CONTENT_WIDTH);
+        }
+
         async function renderAdminPanel() {
             if (!isAdmin()) return;
+
+            applyContentWidth($("#admin-content-width")?.value || document.documentElement.style.getPropertyValue("--content-width") || DEFAULT_CONTENT_WIDTH);
 
             const postList = $("#admin-post-list");
             const userList = $("#admin-user-list");
@@ -980,7 +1135,9 @@
                             const style = child.style;
                             if (style.fontSize) clean.push(`font-size:${style.fontSize}`);
                             if (style.color) clean.push(`color:${style.color}`);
-                            if (style.backgroundColor) clean.push(`background-color:${style.backgroundColor}`);
+                            // Do not carry pasted Word/Google/webpage backgrounds into posts.
+                            // Intentional highlighting is stored in <mark>, handled separately.
+                            
                             if (clean.length) child.setAttribute("style", clean.join(";"));
                             else child.removeAttribute("style");
                         } else if (child.tagName === "FONT" && name === "color") {
@@ -1235,6 +1392,19 @@
             editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
+
+        function cleanPastedEditorBackgrounds() {
+            const editor = getEditor();
+            if (!editor) return;
+
+            editor.querySelectorAll("[style]").forEach(el => {
+                if (el.closest("mark")) return;
+                el.style.removeProperty("background");
+                el.style.removeProperty("background-color");
+                if (!el.getAttribute("style")?.trim()) el.removeAttribute("style");
+            });
+        }
+
         function setupRichEditor() {
             const editor = getEditor();
             if (!editor) return;
@@ -1291,6 +1461,9 @@
             editor.addEventListener("mouseup", saveEditorSelection);
             editor.addEventListener("keyup", saveEditorSelection);
             editor.addEventListener("input", saveEditorSelection);
+            editor.addEventListener("paste", () => {
+                setTimeout(cleanPastedEditorBackgrounds, 0);
+            });
 
             document.addEventListener("selectionchange", () => {
                 const sel = window.getSelection();
@@ -1525,6 +1698,8 @@
         addLoginGuard();
         setupRichEditor();
         setupAdminLogoUnlock();
+        setupAdminLayoutSettings();
+        loadContentWidthSetting();
 
         $("#admin-refresh")?.addEventListener("click", renderAdminPanel);
         $("#admin-exit")?.addEventListener("click", () => {
