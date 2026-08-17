@@ -325,6 +325,51 @@
             color: #fff;
             cursor: pointer;
         }
+        .rich-menu-wrap {
+            position: relative;
+            display: inline-flex;
+        }
+        .rich-menu-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .rich-popup-menu {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            z-index: 1000;
+            display: none;
+            min-width: 92px;
+            padding: 5px;
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 9px;
+            background: #151620;
+            box-shadow: 0 10px 28px rgba(0,0,0,.45);
+        }
+        .rich-popup-menu.open {
+            display: flex;
+            flex-direction: column;
+        }
+        .rich-popup-menu button {
+            border: 0;
+            border-radius: 6px;
+            padding: 7px 10px;
+            background: transparent;
+            color: #fff;
+            text-align: left;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .rich-popup-menu button:hover {
+            background: rgba(0,229,255,.12);
+            color: var(--neon-blue);
+        }
+        .rich-heading-menu {
+            min-width: 125px;
+        }
+
         .post-editor {
             min-height: 145px;
             max-height: 420px;
@@ -432,9 +477,6 @@
 
 
     
-        #post-toolbar #post-font-size {
-            min-width: 95px;
-        }
         #post-editor {
             color: #ffffff !important;
             caret-color: #ffffff !important;
@@ -501,24 +543,33 @@
                                 <i class="fa-solid fa-font"></i>
                                 <input type="color" id="post-font-color" value="#00e5ff" aria-label="Font colour">
                             </label>
-                            <select id="post-font-size" class="rich-heading" title="Text size" aria-label="Text size">
-                                <option value="">Text size</option>
-                                <option value="12">12 px</option>
-                                <option value="14">14 px</option>
-                                <option value="16">16 px</option>
-                                <option value="18">18 px</option>
-                                <option value="20">20 px</option>
-                                <option value="24">24 px</option>
-                                <option value="28">28 px</option>
-                                <option value="32">32 px</option>
-                                <option value="40">40 px</option>
-                            </select>
-                            <select id="post-heading" class="rich-heading" title="Heading">
-                                <option value="p">Normal</option>
-                                <option value="h2">Heading 1</option>
-                                <option value="h3">Heading 2</option>
-                                <option value="h4">Heading 3</option>
-                            </select>
+                            <div class="rich-menu-wrap">
+                                <button type="button" class="rich-tool rich-menu-btn" id="post-font-size-btn" title="Text size" aria-label="Text size" aria-expanded="false">
+                                    <i class="fa-solid fa-text-height"></i>
+                                </button>
+                                <div class="rich-popup-menu" id="post-font-size-menu" role="menu">
+                                    <button type="button" data-size="12">12 px</button>
+                                    <button type="button" data-size="14">14 px</button>
+                                    <button type="button" data-size="16">16 px</button>
+                                    <button type="button" data-size="18">18 px</button>
+                                    <button type="button" data-size="20">20 px</button>
+                                    <button type="button" data-size="24">24 px</button>
+                                    <button type="button" data-size="28">28 px</button>
+                                    <button type="button" data-size="32">32 px</button>
+                                    <button type="button" data-size="40">40 px</button>
+                                </div>
+                            </div>
+                            <div class="rich-menu-wrap">
+                                <button type="button" class="rich-tool rich-menu-btn" id="post-heading-btn" title="Heading" aria-label="Heading" aria-expanded="false">
+                                    <strong>H</strong>
+                                </button>
+                                <div class="rich-popup-menu rich-heading-menu" id="post-heading-menu" role="menu">
+                                    <button type="button" data-heading="p">Normal</button>
+                                    <button type="button" data-heading="h2">Heading 1</button>
+                                    <button type="button" data-heading="h3">Heading 2</button>
+                                    <button type="button" data-heading="h4">Heading 3</button>
+                                </div>
+                            </div>
                             <button type="button" class="rich-tool" id="post-link-btn" title="Attach link to selected word or line"><i class="fa-solid fa-link"></i></button>
                             <button type="button" class="rich-tool" id="post-unlink-btn" title="Remove link"><i class="fa-solid fa-link-slash"></i></button>
                             <button type="button" class="rich-tool" data-cmd="insertUnorderedList" title="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
@@ -1532,18 +1583,61 @@
                 });
             });
 
-            const heading = document.querySelector("#post-heading");
-            heading?.addEventListener("change", e => {
-                const value = e.target.value;
-                if (value && value !== "p") applyHeading(value);
-                e.target.value = "p";
+            function closeRichMenus() {
+                document.querySelectorAll(".rich-popup-menu.open").forEach(menu => {
+                    menu.classList.remove("open");
+                    const btn = menu.parentElement?.querySelector(".rich-menu-btn");
+                    btn?.setAttribute("aria-expanded", "false");
+                });
+            }
+
+            function toggleRichMenu(menuId, buttonId) {
+                const menu = document.getElementById(menuId);
+                const button = document.getElementById(buttonId);
+                if (!menu || !button) return;
+                const willOpen = !menu.classList.contains("open");
+                closeRichMenus();
+                if (willOpen) {
+                    menu.classList.add("open");
+                    button.setAttribute("aria-expanded", "true");
+                    restoreEditorSelection();
+                }
+            }
+
+            document.querySelector("#post-font-size-btn")?.addEventListener("mousedown", () => saveEditorSelection());
+            document.querySelector("#post-font-size-btn")?.addEventListener("click", e => {
+                e.preventDefault();
+                toggleRichMenu("post-font-size-menu", "post-font-size-btn");
             });
 
-            const size = document.querySelector("#post-font-size");
-            size?.addEventListener("change", e => {
-                const value = parseInt(e.target.value, 10);
-                if (Number.isFinite(value)) applyFontSize(value);
-                e.target.value = "";
+            document.querySelectorAll("#post-font-size-menu [data-size]").forEach(btn => {
+                btn.addEventListener("mousedown", () => saveEditorSelection());
+                btn.addEventListener("click", e => {
+                    e.preventDefault();
+                    const value = parseInt(btn.dataset.size, 10);
+                    if (Number.isFinite(value)) applyFontSize(value);
+                    closeRichMenus();
+                });
+            });
+
+            document.querySelector("#post-heading-btn")?.addEventListener("mousedown", () => saveEditorSelection());
+            document.querySelector("#post-heading-btn")?.addEventListener("click", e => {
+                e.preventDefault();
+                toggleRichMenu("post-heading-menu", "post-heading-btn");
+            });
+
+            document.querySelectorAll("#post-heading-menu [data-heading]").forEach(btn => {
+                btn.addEventListener("mousedown", () => saveEditorSelection());
+                btn.addEventListener("click", e => {
+                    e.preventDefault();
+                    const value = btn.dataset.heading;
+                    if (value) applyHeading(value);
+                    closeRichMenus();
+                });
+            });
+
+            document.addEventListener("click", e => {
+                if (!e.target.closest(".rich-menu-wrap")) closeRichMenus();
             });
 
             const color = document.querySelector("#post-font-color");
