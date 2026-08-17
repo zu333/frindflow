@@ -189,8 +189,8 @@
 
         /* Post Card */
         .post-card {
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 14px;
+            margin-bottom: 14px;
         }
         .post-header {
             display: flex;
@@ -203,8 +203,11 @@
             color: var(--neon-blue);
         }
         .post-content {
-            margin-bottom: 15px;
-            line-height: 1.5;
+            margin-bottom: 10px;
+            line-height: 1.45;
+            font-size: 15px;
+            color: #ffffff;
+            overflow-wrap: anywhere;
         }
         .post-link a {
             color: var(--neon-purple);
@@ -382,40 +385,51 @@
         .post-content ul, .post-content ol { margin: 8px 0 8px 24px; }
 
     
-        /* Responsive image fitting: supports 16:9, 9:16, 1:1 and any other ratio.
-           The complete image stays visible inside the post window. */
+        /* Compact post images: show the complete image without cropping. */
         .post-content-image,
         .post-image,
         .feed-post img,
         .post-card img {
             display: block;
-            width: 100%;
+            width: auto;
             max-width: 100%;
             height: auto;
-            max-height: 75vh;
+            max-height: 420px;
             object-fit: contain;
             object-position: center;
-            margin-left: auto;
-            margin-right: auto;
-            border-radius: 12px;
+            margin: 8px auto 0;
+            border-radius: 10px;
         }
+
         .post-image-wrap {
             width: 100%;
             max-width: 100%;
-            max-height: 75vh;
+            max-height: 420px;
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background: rgba(0,0,0,.12);
-            border-radius: 12px;
+            background: rgba(0,0,0,.10);
+            border-radius: 10px;
         }
+
         .post-image-wrap img {
-            width: 100%;
+            width: auto;
+            max-width: 100%;
             height: auto;
-            max-height: 75vh;
+            max-height: 420px;
             object-fit: contain;
         }
+
+        /* Old pasted black text should remain readable on the dark feed. */
+        .post-content [style*="color: rgb(0, 0, 0)"],
+        .post-content [style*="color: #000"],
+        .post-content [style*="color:#000"],
+        .post-content [style*="color: black"] {
+            color: #ffffff !important;
+        }
+
 
     
         #post-toolbar #post-font-size {
@@ -569,7 +583,7 @@
                 </h2>
                 <p style="color: var(--text-muted); margin-bottom: 18px;">
                     Admin tools: delete posts, block users, and publish with admin bypass.
-                    <br><small style="color:#ffb86b;">The password unlock is a front-end gate; Firebase Security Rules must also authorize admin actions for real protection.</small>
+                    <br><small style="color:#ffb86b;">Password is stored as a PBKDF2 hash, not plain text. For real hack protection, Firebase Security Rules/Auth must also restrict admin actions.</small>
                 </p>
 
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
@@ -590,9 +604,9 @@
                     </p>
 
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <input id="admin-content-width" type="range" min="560" max="1200" step="10" value="800"
+                        <input id="admin-content-width" type="range" min="520" max="1000" step="10" value="680"
                                style="flex:1;min-width:220px;accent-color:var(--neon-gold);">
-                        <strong id="admin-content-width-value" style="min-width:75px;color:var(--neon-gold);">800 px</strong>
+                        <strong id="admin-content-width-value" style="min-width:75px;color:var(--neon-gold);">680 px</strong>
                     </div>
 
                     <div id="admin-layout-preview" style="margin-top:14px;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.02);">
@@ -608,7 +622,7 @@
                             <i class="fa-solid fa-floppy-disk"></i> Save Window Size
                         </button>
                         <button id="admin-layout-reset" class="btn-danger" type="button">
-                            <i class="fa-solid fa-rotate-left"></i> Reset 800 px
+                            <i class="fa-solid fa-rotate-left"></i> Reset 680 px
                         </button>
                     </div>
                     <div id="admin-layout-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
@@ -688,7 +702,33 @@
         let adminBypassPost = false;
         let logoClicks = 0;
         let logoClickTimer = null;
-        const ADMIN_PASSWORD = "lahore799";
+        // Admin password is not stored in plaintext.
+        // PBKDF2 keeps the password out of the page source; real authorization
+        // must still be enforced with Firebase Auth/Firestore Security Rules.
+        const ADMIN_PASSWORD_SALT = "TmbJfJyqhdANcoHlSTW51w==";
+        const ADMIN_PASSWORD_HASH = "a/fGQWOZJ6x+YkBTUu4zcwd4MH9VEKMhaUySWdjfYPs=";
+        const ADMIN_PASSWORD_ITERATIONS = 600000;
+
+        async function verifyAdminPassword(password) {
+            if (typeof crypto === "undefined" || !crypto.subtle) return false;
+            const enc = new TextEncoder();
+            const salt = Uint8Array.from(atob(ADMIN_PASSWORD_SALT), c => c.charCodeAt(0));
+            const expected = Uint8Array.from(atob(ADMIN_PASSWORD_HASH), c => c.charCodeAt(0));
+
+            const baseKey = await crypto.subtle.importKey(
+                "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits"]
+            );
+            const bits = await crypto.subtle.deriveBits(
+                { name: "PBKDF2", salt, iterations: ADMIN_PASSWORD_ITERATIONS, hash: "SHA-256" },
+                baseKey, 256
+            );
+            const actual = new Uint8Array(bits);
+            if (actual.length !== expected.length) return false;
+
+            let diff = 0;
+            for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
+            return diff === 0;
+        }
 
         const $ = (s) => document.querySelector(s);
 
@@ -733,17 +773,25 @@
             return adminMode === true;
         }
 
-        function openAdminLogin() {
+        async function openAdminLogin() {
             const password = window.prompt("Enter Admin Password:");
-            if (password === ADMIN_PASSWORD) {
-                adminMode = true;
-                const navAdmin = $("#nav-admin");
-                if (navAdmin) navAdmin.style.display = "inline-block";
-                switchView("admin-view");
-                renderAdminPanel();
-                showStatus("Admin mode enabled.", true);
-            } else if (password !== null) {
-                showStatus("Wrong admin password.");
+            if (password === null) return;
+
+            try {
+                const ok = await verifyAdminPassword(password);
+                if (ok) {
+                    adminMode = true;
+                    const navAdmin = $("#nav-admin");
+                    if (navAdmin) navAdmin.style.display = "inline-block";
+                    switchView("admin-view");
+                    renderAdminPanel();
+                    showStatus("Admin mode enabled.", true);
+                } else {
+                    showStatus("Wrong admin password.");
+                }
+            } catch (e) {
+                console.error("Admin verification failed:", e);
+                showStatus("Admin verification failed.");
             }
         }
 
@@ -817,7 +865,7 @@
         }
 
 
-        const DEFAULT_CONTENT_WIDTH = 800;
+        const DEFAULT_CONTENT_WIDTH = 680;
         const MIN_CONTENT_WIDTH = 560;
         const MAX_CONTENT_WIDTH = 1200;
         const CONTENT_WIDTH_KEY = "frindflow_content_width";
@@ -1397,12 +1445,72 @@
             const editor = getEditor();
             if (!editor) return;
 
+            // Pasted content from Word/Google/news sites can carry black text,
+            // white backgrounds and large font sizes. Remove only those pasted
+            // presentation styles so the editor uses FrindFlow's own theme.
             editor.querySelectorAll("[style]").forEach(el => {
-                if (el.closest("mark")) return;
                 el.style.removeProperty("background");
                 el.style.removeProperty("background-color");
+                el.style.removeProperty("color");
+                el.style.removeProperty("font-size");
+                el.style.removeProperty("font-family");
                 if (!el.getAttribute("style")?.trim()) el.removeAttribute("style");
             });
+
+            editor.querySelectorAll("font").forEach(el => {
+                el.removeAttribute("color");
+                el.removeAttribute("face");
+                el.removeAttribute("size");
+            });
+        }
+
+        function sanitizePastedHtmlForFrindFlow(rawHtml) {
+            const holder = document.createElement("div");
+            holder.innerHTML = rawHtml || "";
+
+            holder.querySelectorAll("script, style, meta, link, iframe, object").forEach(el => el.remove());
+
+            holder.querySelectorAll("*").forEach(el => {
+                el.removeAttribute("bgcolor");
+                el.removeAttribute("color");
+                el.removeAttribute("face");
+                el.removeAttribute("size");
+
+                const style = el.getAttribute("style");
+                if (style) {
+                    const kept = style.split(";").map(x => x.trim()).filter(Boolean).filter(rule => {
+                        const prop = rule.split(":")[0]?.trim().toLowerCase();
+                        return !["color","background","background-color","font-size","font-family","mso-fareast-font-family"].includes(prop);
+                    });
+                    if (kept.length) el.setAttribute("style", kept.join(";"));
+                    else el.removeAttribute("style");
+                }
+            });
+
+            return holder.innerHTML;
+        }
+
+        function handleEditorPaste(e) {
+            const editor = getEditor();
+            if (!editor) return;
+
+            e.preventDefault();
+            saveEditorSelection();
+            restoreEditorSelection();
+
+            const clipboard = e.clipboardData;
+            const htmlData = clipboard?.getData("text/html") || "";
+            const textData = clipboard?.getData("text/plain") || "";
+
+            let safeHtml = htmlData ? sanitizePastedHtmlForFrindFlow(htmlData) : "";
+            if (!safeHtml) {
+                safeHtml = escapeHtml(textData).replace(/\r?\n/g, "<br>");
+            }
+
+            document.execCommand("insertHTML", false, safeHtml);
+            cleanPastedEditorBackgrounds();
+            saveEditorSelection();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
         function setupRichEditor() {
@@ -1461,9 +1569,7 @@
             editor.addEventListener("mouseup", saveEditorSelection);
             editor.addEventListener("keyup", saveEditorSelection);
             editor.addEventListener("input", saveEditorSelection);
-            editor.addEventListener("paste", () => {
-                setTimeout(cleanPastedEditorBackgrounds, 0);
-            });
+            editor.addEventListener("paste", handleEditorPaste);
 
             document.addEventListener("selectionchange", () => {
                 const sel = window.getSelection();
