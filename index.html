@@ -726,7 +726,7 @@
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import {
             getFirestore, collection, addDoc, query, orderBy, onSnapshot,
-            serverTimestamp, deleteDoc, doc, getDoc, setDoc
+            serverTimestamp, deleteDoc, doc, getDoc, setDoc, updateDoc
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -1194,8 +1194,7 @@
                             <strong>${escapeHtml(currentUser.displayName || "User")}</strong>
                             <div style="color:var(--text-muted);font-size:12px">${escapeHtml(currentUser.email || "")}</div>
                         </div>
-                    ${buildPostActions(post)}
-</div>`;
+                    </div>`;
             } else {
                 info.innerHTML = `<div style="color:var(--text-muted)">Sign in to publish posts and manage your profile.</div>`;
             }
@@ -1794,72 +1793,39 @@
             return ts.toDate().toLocaleString();
         }
 
-        
-        function getActionCount(post, key) {
-            const value = post && post[key];
+
+        function getPostActionCount(post, field) {
+            const value = post?.[field];
             return Number.isFinite(Number(value)) ? Number(value) : 0;
         }
 
-        async function updatePostAction(postId, action) {
-            if (!postId) return;
-
-            // Firebase-aware update when Firestore is available.
-            try {
-                if (typeof db !== "undefined" && db) {
-                    const ref = db.collection("posts").doc(postId);
-                    const snap = await ref.get();
-                    if (!snap.exists) return;
-
-                    const data = snap.data() || {};
-                    const countField = action === "like" ? "likes" : "shares";
-                    const current = Number(data[countField] || 0);
-                    const next = current + 1;
-
-                    const update = {};
-                    update[countField] = next;
-                    await ref.update(update);
-                    return;
-                }
-            } catch (err) {
-                console.warn("Could not update post action in Firebase:", err);
-            }
-
-            // Fallback for static/demo rendering.
-            const key = `frindflow_${action}_${postId}`;
-            const old = Number(localStorage.getItem(key) || 0);
-            localStorage.setItem(key, String(old + 1));
-        }
-
-        function localActionCount(postId, action) {
-            return Number(localStorage.getItem(`frindflow_${action}_${postId}`) || 0);
+        function favoriteStorageKey(postId) {
+            return `frindflow_favorite_${postId}`;
         }
 
         function buildPostActions(post) {
-            const postId = post.id || post.postId || post.key || post.createdAt || String(Math.random());
-            const likes = getActionCount(post, "likes") + localActionCount(postId, "like");
-            const comments = getActionCount(post, "comments");
-            const shares = getActionCount(post, "shares") + localActionCount(postId, "share");
-            const favoriteKey = `frindflow_favorite_${postId}`;
-            const favorited = localStorage.getItem(favoriteKey) === "1";
+            const postId = String(post.id || post.postId || "");
+            const liked = localStorage.getItem(`frindflow_liked_${postId}`) === "1";
+            const favorited = localStorage.getItem(favoriteStorageKey(postId)) === "1";
 
             return `
-                <div class="post-actions" data-post-id="${String(postId).replace(/"/g, '&quot;')}">
-                    <button type="button" class="post-action-btn like-btn ${likes ? "active" : ""}" data-action="like" title="Like">
+                <div class="post-actions" data-post-action-id="${escapeHtml(postId)}">
+                    <button type="button" class="post-action-btn ${liked ? "active" : ""}" data-post-action="like" title="Like">
                         <i class="fa-regular fa-thumbs-up"></i>
                         <span class="action-label">Like</span>
-                        <span class="count">${likes}</span>
+                        <span class="count">${getPostActionCount(post, "likes")}</span>
                     </button>
-                    <button type="button" class="post-action-btn comment-btn" data-action="comment" title="Comment">
+                    <button type="button" class="post-action-btn" data-post-action="comment" title="Comment">
                         <i class="fa-regular fa-comment"></i>
                         <span class="action-label">Comment</span>
-                        <span class="count">${comments}</span>
+                        <span class="count">${getPostActionCount(post, "comments")}</span>
                     </button>
-                    <button type="button" class="post-action-btn share-btn" data-action="share" title="Share">
+                    <button type="button" class="post-action-btn" data-post-action="share" title="Share">
                         <i class="fa-solid fa-share-nodes"></i>
                         <span class="action-label">Share</span>
-                        <span class="count">${shares}</span>
+                        <span class="count">${getPostActionCount(post, "shares")}</span>
                     </button>
-                    <button type="button" class="post-action-btn favorite-btn ${favorited ? "favorited" : ""}" data-action="favorite" title="Favorite">
+                    <button type="button" class="post-action-btn ${favorited ? "favorited" : ""}" data-post-action="favorite" title="Favorite">
                         <i class="${favorited ? "fa-solid" : "fa-regular"} fa-star"></i>
                         <span class="action-label">Favorite</span>
                     </button>
@@ -1867,69 +1833,127 @@
             `;
         }
 
-        function bindPostActions(container = document) {
+        async function changePostCounter(postId, field, amount = 1) {
+            if (!postId) return false;
+            try {
+                await updateDoc(doc(db, "posts", postId), {
+                    [field]: getPostActionCount(window.__frindflowPostCache?.[postId] || {}, field) + amount
+                });
+                return true;
+            } catch (error) {
+                console.warn(`Could not update ${field}:`, error);
+                return false;
+            }
+        }
+
+        function bindPostActions(container) {
             container.querySelectorAll(".post-actions").forEach(bar => {
                 if (bar.dataset.bound === "1") return;
                 bar.dataset.bound = "1";
 
-                const postId = bar.dataset.postId;
+                const postId = bar.dataset.postActionId;
+                const post = window.__frindflowPostCache?.[postId] || {};
 
-                bar.querySelectorAll(".post-action-btn").forEach(btn => {
-                    btn.addEventListener("click", async () => {
-                        const action = btn.dataset.action;
+                bar.querySelectorAll("[data-post-action]").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        const action = button.dataset.postAction;
+                        const countEl = button.querySelector(".count");
 
                         if (action === "favorite") {
-                            const key = `frindflow_favorite_${postId}`;
+                            const key = favoriteStorageKey(postId);
                             const active = localStorage.getItem(key) === "1";
                             localStorage.setItem(key, active ? "0" : "1");
-                            btn.classList.toggle("favorited", !active);
-                            btn.querySelector("i").className = `${!active ? "fa-solid" : "fa-regular"} fa-star`;
-                            return;
-                        }
-
-                        if (action === "comment") {
-                            const target = bar.closest("[data-post-id]") || bar.parentElement;
-                            const input = target?.querySelector(".comment-input, textarea[placeholder*='comment' i]");
-                            if (input) {
-                                input.focus();
-                                return;
-                            }
-                            alert("Comment option is ready. Add the comment box here if your current post layout has one.");
-                            return;
-                        }
-
-                        if (action === "share") {
-                            const url = postId && location.href ? `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}` : location.href;
-                            try {
-                                if (navigator.share) {
-                                    await navigator.share({ title: "FrindFlow Post", url });
-                                } else if (navigator.clipboard) {
-                                    await navigator.clipboard.writeText(url);
-                                    alert("Post link copied.");
-                                }
-                            } catch (err) {
-                                console.warn("Share cancelled/failed:", err);
-                            }
-                            await updatePostAction(postId, "share");
-                            const count = btn.querySelector(".count");
-                            if (count) count.textContent = String(Number(count.textContent || 0) + 1);
+                            button.classList.toggle("favorited", !active);
+                            const icon = button.querySelector("i");
+                            if (icon) icon.className = `${!active ? "fa-solid" : "fa-regular"} fa-star`;
                             return;
                         }
 
                         if (action === "like") {
-                            btn.disabled = true;
-                            await updatePostAction(postId, "like");
-                            const count = btn.querySelector(".count");
-                            if (count) count.textContent = String(Number(count.textContent || 0) + 1);
-                            btn.classList.add("active");
-                            btn.disabled = false;
+                            const key = `frindflow_liked_${postId}`;
+                            const alreadyLiked = localStorage.getItem(key) === "1";
+                            if (alreadyLiked) return;
+
+                            localStorage.setItem(key, "1");
+                            button.classList.add("active");
+                            const icon = button.querySelector("i");
+                            if (icon) icon.className = "fa-solid fa-thumbs-up";
+
+                            const old = Number(countEl?.textContent || 0);
+                            if (countEl) countEl.textContent = String(old + 1);
+
+                            const saved = await changePostCounter(postId, "likes", 1);
+                            if (saved && window.__frindflowPostCache?.[postId]) {
+                                window.__frindflowPostCache[postId].likes = old + 1;
+                            }
+                            return;
+                        }
+
+                        if (action === "share") {
+                            const shareUrl = `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`;
+                            try {
+                                if (navigator.share) {
+                                    await navigator.share({
+                                        title: "FrindFlow Post",
+                                        url: shareUrl
+                                    });
+                                } else if (navigator.clipboard?.writeText) {
+                                    await navigator.clipboard.writeText(shareUrl);
+                                    showStatus("Post link copied.", true);
+                                } else {
+                                    window.prompt("Copy this post link:", shareUrl);
+                                }
+
+                                const old = Number(countEl?.textContent || 0);
+                                if (countEl) countEl.textContent = String(old + 1);
+                                await changePostCounter(postId, "shares", 1);
+                            } catch (_) {
+                                // User cancelled the native share dialog.
+                            }
+                            return;
+                        }
+
+                        if (action === "comment") {
+                            const card = bar.closest(".post-card");
+                            const existing = card?.querySelector(".post-comment-box");
+                            if (existing) {
+                                existing.scrollIntoView({ behavior: "smooth", block: "center" });
+                                existing.querySelector("input, textarea")?.focus();
+                                return;
+                            }
+
+                            const box = document.createElement("div");
+                            box.className = "post-comment-box";
+                            box.style.cssText = "margin-top:10px;display:flex;gap:8px;";
+                            box.innerHTML = `
+                                <input type="text" placeholder="Write a comment..." style="flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#fff;">
+                                <button type="button" class="btn-neon-blue" style="padding:8px 12px;">Send</button>
+                            `;
+                            card?.appendChild(box);
+
+                            const input = box.querySelector("input");
+                            const send = box.querySelector("button");
+                            send.addEventListener("click", async () => {
+                                const text = input.value.trim();
+                                if (!text) return;
+                                try {
+                                    const current = getPostActionCount(window.__frindflowPostCache?.[postId] || {}, "comments");
+                                    await updateDoc(doc(db, "posts", postId), { comments: current + 1 });
+                                    input.value = "";
+                                    if (countEl) countEl.textContent = String(current + 1);
+                                    showStatus("Comment count updated.", true);
+                                } catch (error) {
+                                    showStatus("Comment could not be saved: " + error.message);
+                                }
+                            });
+                            input.focus();
                         }
                     });
                 });
             });
         }
 
-function renderPosts(snapshot) {
+        function renderPosts(snapshot) {
             const feed = document.querySelector("#feed-view");
             if (!feed) return;
 
@@ -1950,6 +1974,11 @@ function renderPosts(snapshot) {
                 return Number.isFinite(parsed) ? parsed : 0;
             };
             posts.sort((a, b) => postTime(b) - postTime(a));
+
+            window.__frindflowPostCache = {};
+            posts.forEach(post => {
+                window.__frindflowPostCache[String(post.id)] = post;
+            });
 
             const fragment = document.createDocumentFragment();
 
@@ -1982,7 +2011,7 @@ function renderPosts(snapshot) {
                         : (post.text ? `<div class="post-content">${escapeHtml(post.text).replace(/\n/g, "<br>")}</div>` : "")}
                     ${image}
                     ${link}
-                    <div class="post-actions"></div>`;
+                    ${buildPostActions(post)}`;
 
                 card.querySelector("[data-delete]")?.addEventListener("click", async () => {
                     try {
@@ -1997,6 +2026,7 @@ function renderPosts(snapshot) {
             });
 
             createBox.after(fragment);
+            bindPostActions(feed);
         }
 
         function listenToPosts() {
@@ -2053,6 +2083,5 @@ function renderPosts(snapshot) {
 
         listenToPosts();
     </script>
-<script>document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>bindPostActions(document),500));</script>
 </body>
 </html>
