@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrindFlow</title>
-    <!-- Like / Comment / Share / Favorite UI + Image Zoom + Dual Side Ads + Admin Zoom Control -->
+    <!-- Like / Comment / Share / Favorite UI + Image Zoom + Dual Side Ads + Admin Zoom + Post Fixes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -14,7 +14,7 @@
             --neon-gold: #ffcf00;
             --text-main: #ffffff;
             --text-muted: #a0a0b0;
-            --ad-zoom: 1; /* Default Ad Zoom Level */
+            --ad-zoom: 1;
         }
 
         * {
@@ -122,6 +122,8 @@
         }
         .btn-neon-blue { color: var(--neon-blue); border: 1px solid var(--neon-blue); box-shadow: 0 0 8px rgba(0, 229, 255, 0.2); }
         .btn-neon-blue:hover { background: var(--neon-blue); color: var(--dark-bg); box-shadow: 0 0 15px rgba(0, 229, 255, 0.6); }
+        .btn-neon-blue:disabled { opacity: 0.5; cursor: not-allowed; }
+        
         .btn-neon-purple { color: var(--neon-purple); border: 1px solid var(--neon-purple); box-shadow: 0 0 8px rgba(176, 38, 255, 0.2); }
         .btn-neon-purple:hover { background: var(--neon-purple); color: white; box-shadow: 0 0 15px rgba(176, 38, 255, 0.6); }
 
@@ -130,6 +132,7 @@
             padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.3s;
         }
         .btn-neon-gold:hover { background: var(--neon-gold); color: var(--dark-bg); box-shadow: 0 0 10px rgba(255, 207, 0, 0.6); }
+        .btn-neon-gold:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-danger {
             background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d;
@@ -214,7 +217,7 @@
         .post-editor mark { padding: 0 3px; border-radius: 3px; background: #fff176; color: #111; }
         .post-editor a, .post-content a { color: var(--neon-blue); text-decoration: underline; }
 
-        /* ================= SIDE ADS CSS (300x250 Layout + Admin Zoom Support) ================= */
+        /* ================= SIDE ADS CSS ================= */
         .side-ad-container {
             position: fixed;
             top: 90px;
@@ -233,24 +236,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.5); /* Ad box dark background */
+            background: rgba(0, 0, 0, 0.5); 
             border: 1px dashed rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             overflow: hidden;
             text-decoration: none;
             transition: 0.3s;
         }
-        .side-ad-slot:hover {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
-        }
+        .side-ad-slot:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
         
-        /* IMAGE ZOOM CONTROL: object-fit + transform variables */
         .side-ad-slot img { 
             width: 100%; 
             height: 100%; 
-            object-fit: cover; /* Cover fills the box smoothly */
-            transform: scale(var(--ad-zoom)); /* Yeh slider se control hoga */
+            object-fit: cover; 
+            transform: scale(var(--ad-zoom)); 
             display: block; 
             transition: transform 0.2s ease-in-out;
         }
@@ -272,7 +271,7 @@
         </nav>
     </header>
 
-    <!-- Left Ads (Client Side) -->
+    <!-- Left Ads -->
     <div id="client-left-container" class="side-ad-container left-ad">
         <a id="client-left-top" class="side-ad-slot" href="#" target="_blank" style="display:none;">
             <img id="client-left-top-img" style="display:none;" alt="Left Top Ad">
@@ -282,7 +281,7 @@
         </a>
     </div>
 
-    <!-- Right Ads (Client Side) -->
+    <!-- Right Ads -->
     <div id="client-right-container" class="side-ad-container right-ad">
         <a id="client-right-top" class="side-ad-slot" href="#" target="_blank" style="display:none;">
             <img id="client-right-top-img" style="display:none;" alt="Right Top Ad">
@@ -330,7 +329,7 @@
                         <input id="post-image-input" type="file" style="display: none;" accept="image/*">
                     </label>
                     <span id="image-upload-status" style="font-size:12px;color:var(--text-muted);"></span>
-                    <button class="btn-neon-blue" onclick="alert('Post logic will connect to Firebase/Cloudinary here.')">
+                    <button id="main-post-btn" class="btn-neon-blue">
                         <i class="fa-solid fa-paper-plane"></i> Post
                     </button>
                 </div>
@@ -372,7 +371,6 @@
                     <button id="admin-exit" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Exit Admin</button>
                 </div>
 
-                <!-- Window Size Settings -->
                 <div id="admin-layout-settings" style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
                     <h4 style="color:white;margin-bottom:8px;"><i class="fa-solid fa-arrows-left-right"></i> Middle Window Size</h4>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -408,11 +406,8 @@
                     
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
                         
-                        <!-- LEFT SIDE ADS -->
                         <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
                             <strong style="color:var(--neon-blue);display:block;margin-bottom:15px;font-size:16px;">Left Side Ads</strong>
-                            
-                            <!-- Left Top Ad -->
                             <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
                                 <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot (300x250)</span>
                                 <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
@@ -424,8 +419,6 @@
                                 <button type="button" id="admin-left-top-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
                                 <input id="admin-left-top-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
                             </div>
-
-                            <!-- Left Bottom Ad -->
                             <div>
                                 <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot (300x250)</span>
                                 <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
@@ -439,11 +432,8 @@
                             </div>
                         </div>
 
-                        <!-- RIGHT SIDE ADS -->
                         <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
                             <strong style="color:var(--neon-purple);display:block;margin-bottom:15px;font-size:16px;">Right Side Ads</strong>
-                            
-                            <!-- Right Top Ad -->
                             <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
                                 <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot (300x250)</span>
                                 <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
@@ -455,8 +445,6 @@
                                 <button type="button" id="admin-right-top-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
                                 <input id="admin-right-top-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
                             </div>
-
-                            <!-- Right Bottom Ad -->
                             <div>
                                 <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot (300x250)</span>
                                 <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
@@ -471,7 +459,6 @@
                         </div>
                     </div>
 
-                    <!-- NEW: GLOBAL AD ZOOM CONTROL -->
                     <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);margin-top:20px;">
                         <strong style="color:var(--neon-gold);display:block;margin-bottom:10px;font-size:14px;"><i class="fa-solid fa-magnifying-glass"></i> Global Ad Zoom Control</strong>
                         <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Agar ads bohat bade (zoomed-in) lag rahe hain, toh slider ko peechay kar ke unka size chota ya bada karein.</p>
@@ -752,7 +739,6 @@
                 }
             });
 
-            // Populate Posts
             posts.slice(0, 30).forEach(post => {
                 const item = document.createElement("div");
                 item.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,.08);";
@@ -768,7 +754,6 @@
                 postList.appendChild(item);
             });
 
-            // Populate Users
             userList.innerHTML = users.size ? "" : '<div style="color:var(--text-muted)">No users found from posts.</div>';
 
             for (const user of users.values()) {
@@ -837,18 +822,36 @@
         }
 
         function addLoginGuard() {
-            const postButton = document.querySelector(".create-post-box .btn-neon-blue");
+            const postButton = document.querySelector("#main-post-btn");
             if (!postButton) return;
             postButton.onclick = async () => {
                 if (!currentUser && !isAdmin()) { showStatus("Please sign in first."); return; }
+                if (postButton.disabled) return; // Spam protection
+
                 const box = document.querySelector(".create-post-box");
                 const editor = box?.querySelector("#post-editor");
                 const linkInput = box?.querySelector("#post-link-input");
+                const uploadStatusText = $("#image-upload-status")?.textContent;
+                
+                // IMPORTANT: Agar image abhi bhi upload ho rahi hai toh user ko post rok lein
+                if (uploadStatusText === "Uploading...") {
+                    showStatus("Please wait for image to upload.");
+                    return;
+                }
+
                 const htmlValue = sanitizePostHtml(editor?.innerHTML || "");
                 const textValue = (editor?.textContent || "").trim();
                 const linkValue = linkInput?.value.trim() || "";
-                if (!textValue && !linkValue && !selectedImageUrl) { showStatus("Add some text, an image, or a link first."); return; }
+                
+                if (!textValue && !linkValue && !selectedImageUrl) { 
+                    showStatus("Add some text, an image, or a link first."); 
+                    return; 
+                }
+
                 try {
+                    postButton.disabled = true;
+                    postButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
+
                     await addDoc(collection(db, "posts"), {
                         text: textValue, textHtml: htmlValue || null, link: linkValue || null,
                         imageUrl: selectedImageUrl || null, imageName: selectedImageName || null,
@@ -856,13 +859,19 @@
                         userEmail: currentUser?.email || "", userPhoto: currentUser?.photoURL || "",
                         isAdminPost: isAdmin(), adminBypass: isAdmin() && adminBypassPost, createdAt: serverTimestamp()
                     });
+                    
                     if (editor) editor.innerHTML = "";
                     linkInput.value = "";
                     selectedImageUrl = "";
                     $("#image-preview-wrap").style.display = "none";
                     $("#image-upload-status").textContent = "";
                     showStatus("Post published.", true);
-                } catch (e) { showStatus("Could not publish: " + e.message); }
+                } catch (e) { 
+                    showStatus("Could not publish: " + e.message); 
+                } finally {
+                    postButton.disabled = false;
+                    postButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post';
+                }
             };
 
             const fileInput = document.querySelector('#post-image-input');
@@ -890,8 +899,11 @@
             }
         }
 
-        $("#admin-publish")?.addEventListener("click", async () => {
+        $("#admin-publish")?.addEventListener("click", async function() {
             if (!isAdmin()) return;
+            const btn = this;
+            if (btn.disabled) return;
+
             const text = $("#admin-post-text")?.value.trim() || "";
             const link = $("#admin-post-link")?.value.trim() || "";
             const bypass = $("#admin-bypass-toggle")?.checked === true;
@@ -901,6 +913,9 @@
             if (!currentUser) { showStatus("Admin bypass still needs a signed-in Firebase account for Firestore security."); return; }
 
             try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing...';
+
                 await addDoc(collection(db, "posts"), {
                     text, link: link || null, imageUrl: null, imageName: null,
                     uid: currentUser.uid, userName: "Admin", userEmail: currentUser.email || "",
@@ -910,7 +925,12 @@
                 $("#admin-post-link").value = "";
                 showStatus("Admin post published.", true);
                 renderAdminPanel();
-            } catch (e) { showStatus("Admin post failed: " + e.message); }
+            } catch (e) { 
+                showStatus("Admin post failed: " + e.message); 
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Publish Admin Post';
+            }
         });
 
 
@@ -987,10 +1007,9 @@
             showStatus("Admin mode closed.", true);
         });
 
-        // ================= MULTI-ADS MANAGER LOGIC (WITH ZOOM) =================
+        // ================= MULTI-ADS MANAGER LOGIC =================
         let adsData = { leftTopAdUrl: "", leftBottomAdUrl: "", rightTopAdUrl: "", rightBottomAdUrl: "", adZoom: 100 };
 
-        // Real-time Zoom Slider Sync
         const adZoomSlider = $("#admin-ad-zoom");
         if (adZoomSlider) {
             adZoomSlider.addEventListener("input", (e) => {
@@ -1044,7 +1063,7 @@
                     rightTopLink: $("#admin-right-top-link").value.trim(),
                     rightBottomAdUrl: adsData.rightBottomAdUrl,
                     rightBottomLink: $("#admin-right-bottom-link").value.trim(),
-                    adZoom: $("#admin-ad-zoom").value, // Saving zoom preference
+                    adZoom: $("#admin-ad-zoom").value, 
                     updatedAt: serverTimestamp()
                 }, { merge: true });
                 showStatus("All Ads and Zoom settings successfully saved!", true);
@@ -1060,7 +1079,6 @@
                 $(clientId).style.display = "flex";
                 $(sideContainerId).classList.add("active-ad");
                 
-                // Admin Side Sync
                 $(previewId).src = url;
                 $(previewId).style.display = "block";
                 $(removeBtnId).style.display = "inline-block";
@@ -1081,7 +1099,6 @@
                     adsData.rightTopAdUrl = data.rightTopAdUrl || "";
                     adsData.rightBottomAdUrl = data.rightBottomAdUrl || "";
 
-                    // Load Zoom Setting
                     if (data.adZoom) {
                         let zoom = data.adZoom;
                         document.documentElement.style.setProperty("--ad-zoom", zoom / 100);
