@@ -313,7 +313,7 @@
             }
         }
 
-.post-card.shared-target {
+        .post-card.shared-target {
             outline: 2px solid rgba(0, 220, 255, .55);
             box-shadow: 0 0 0 4px rgba(0, 220, 255, .08), 0 12px 40px rgba(0,0,0,.18);
         }
@@ -440,7 +440,6 @@
             font-weight: bold;
         }
 
-    
         /* Hide empty post shells; real Firebase posts remain visible. */
         .dynamic-post:empty,
         .dynamic-post.empty-post,
@@ -448,7 +447,6 @@
             display: none !important;
         }
 
-    
         .rich-editor-wrap {
             border: 1px solid rgba(255,255,255,.12);
             border-radius: 12px;
@@ -618,7 +616,6 @@
         .post-content p { margin: 0 0 8px; }
         .post-content ul, .post-content ol { margin: 8px 0 8px 24px; }
 
-    
         /* Compact post images: show the complete image without cropping. */
         .post-content-image,
         .post-image,
@@ -664,8 +661,6 @@
             color: #ffffff !important;
         }
 
-
-    
         #post-editor {
             color: #ffffff !important;
             caret-color: #ffffff !important;
@@ -679,7 +674,6 @@
             color: #111 !important;
         }
 
-    
         /* Pasted Word/Google/website backgrounds must not create white boxes. */
         #post-editor [style*="background"],
         .post-editor [style*="background"] {
@@ -698,6 +692,40 @@
             background-color: transparent !important;
         }
 
+        /* ================= SIDE ADS CSS (Safe Layout) ================= */
+        .side-ad-container {
+            position: fixed;
+            top: 90px;
+            width: 160px;
+            height: 600px;
+            z-index: 50;
+            display: none; /* Mobile par hide rahega */
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+        }
+        .side-ad-container:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+        .side-ad-container.left-ad { left: 15px; }
+        .side-ad-container.right-ad { right: 15px; }
+        
+        .side-ad-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Laptops aur badi screens par ads show honge */
+        @media (min-width: 1100px) {
+            .side-ad-container.active-ad {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -711,6 +739,14 @@
             <button onclick="switchView('admin-view')" id="nav-admin" style="display:none;"><i class="fa-solid fa-shield-halved"></i> Admin</button>
         </nav>
     </header>
+
+    <!-- Left & Right Ads (Client Side) -->
+    <a id="client-left-ad" href="#" target="_blank" class="side-ad-container left-ad">
+        <img id="client-left-ad-img" style="display:none;" alt="Left Ad">
+    </a>
+    <a id="client-right-ad" href="#" target="_blank" class="side-ad-container right-ad">
+        <img id="client-right-ad-img" style="display:none;" alt="Right Ad">
+    </a>
 
     <!-- Main Dynamic Container -->
     <main>
@@ -882,6 +918,41 @@
                     <div id="admin-post-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
                 </div>
 
+                <!-- Side Ads Admin Manager -->
+                <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
+                    <h4 style="color:white;margin-bottom:15px;"><i class="fa-solid fa-ad"></i> Side Ads Manager (160x600)</h4>
+                    
+                    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                        <!-- Left Ad Edit -->
+                        <div style="flex:1;min-width:250px;background:rgba(255,255,255,.02);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
+                            <strong style="color:var(--neon-blue);display:block;margin-bottom:10px;">Left Ad</strong>
+                            <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                <i class="fa-solid fa-upload"></i> Upload Image
+                                <input id="admin-left-ad-file" type="file" style="display: none;" accept="image/*">
+                            </label>
+                            <span id="admin-left-ad-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                            <img id="admin-left-ad-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                            <input id="admin-left-ad-link" type="text" placeholder="Ad Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                        </div>
+
+                        <!-- Right Ad Edit -->
+                        <div style="flex:1;min-width:250px;background:rgba(255,255,255,.02);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
+                            <strong style="color:var(--neon-purple);display:block;margin-bottom:10px;">Right Ad</strong>
+                            <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                <i class="fa-solid fa-upload"></i> Upload Image
+                                <input id="admin-right-ad-file" type="file" style="display: none;" accept="image/*">
+                            </label>
+                            <span id="admin-right-ad-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                            <img id="admin-right-ad-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                            <input id="admin-right-ad-link" type="text" placeholder="Ad Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                        </div>
+                    </div>
+                    
+                    <button id="admin-save-ads-btn" class="btn-neon-gold" style="margin-top:15px;width:100%;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Publish Ads
+                    </button>
+                </div>
+
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
                     <h4 style="color:white;margin-bottom:10px;">Post Management</h4>
                     <div id="admin-post-list" style="display:grid;gap:10px;">
@@ -942,9 +1013,6 @@
         let adminBypassPost = false;
         let logoClicks = 0;
         let logoClickTimer = null;
-        // Admin password is not stored in plaintext.
-        // PBKDF2 keeps the password out of the page source; real authorization
-        // must still be enforced with Firebase Auth/Firestore Security Rules.
         const ADMIN_PASSWORD_SALT = "TmbJfJyqhdANcoHlSTW51w==";
         const ADMIN_PASSWORD_HASH = "a/fGQWOZJ6x+YkBTUu4zcwd4MH9VEKMhaUySWdjfYPs=";
         const ADMIN_PASSWORD_ITERATIONS = 600000;
@@ -1127,7 +1195,6 @@
             if (slider) slider.value = String(width);
             if (valueLabel) valueLabel.textContent = `${width} px`;
 
-            // Preview uses the same proportional width as the real middle window.
             if (preview) {
                 const previewMax = 520;
                 const ratio = (width - MIN_CONTENT_WIDTH) / (MAX_CONTENT_WIDTH - MIN_CONTENT_WIDTH);
@@ -1423,9 +1490,6 @@
                             const style = child.style;
                             if (style.fontSize) clean.push(`font-size:${style.fontSize}`);
                             if (style.color) clean.push(`color:${style.color}`);
-                            // Do not carry pasted Word/Google/webpage backgrounds into posts.
-                            // Intentional highlighting is stored in <mark>, handled separately.
-                            
                             if (clean.length) child.setAttribute("style", clean.join(";"));
                             else child.removeAttribute("style");
                         } else if (child.tagName === "FONT" && name === "color") {
@@ -1435,7 +1499,6 @@
                                 child.removeAttribute("color");
                             }
                         } else if (child.tagName === "A" && ["target","rel"].includes(name)) {
-                            // Re-added below.
                             child.removeAttribute(attr.name);
                         } else {
                             child.removeAttribute(attr.name);
@@ -1566,7 +1629,6 @@
             if (!sel.rangeCount) return;
             const range = sel.getRangeAt(0);
 
-            // If the selection is inside one existing block, change that block.
             let node = sel.anchorNode;
             if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
             const block = node?.closest?.("p,h2,h3,h4");
@@ -1583,7 +1645,6 @@
                 return;
             }
 
-            // Otherwise wrap the selected content in the requested heading.
             wrapSelected(tag);
         }
 
@@ -1685,9 +1746,6 @@
             const editor = getEditor();
             if (!editor) return;
 
-            // Pasted content from Word/Google/news sites can carry black text,
-            // white backgrounds and large font sizes. Remove only those pasted
-            // presentation styles so the editor uses FrindFlow's own theme.
             editor.querySelectorAll("[style]").forEach(el => {
                 el.style.removeProperty("background");
                 el.style.removeProperty("background-color");
@@ -1760,7 +1818,6 @@
             const toolbar = document.querySelector("#post-toolbar");
             if (!toolbar) return;
 
-            // Save the selection BEFORE the browser moves focus to any toolbar control.
             toolbar.querySelectorAll("button,select,input").forEach(control => {
                 control.addEventListener("mousedown", () => saveEditorSelection());
             });
@@ -1886,7 +1943,14 @@
                         return;
                     }
 
-                    // Show the image immediately, before Cloudinary finishes.
+                    // File Size Limit Check (10MB)
+                    const maxSizeMB = 10;
+                    if (file.size > maxSizeMB * 1024 * 1024) {
+                        showStatus(`File is too large (${(file.size / (1024*1024)).toFixed(1)} MB). Please upload a file smaller than ${maxSizeMB} MB.`);
+                        event.target.value = "";
+                        return;
+                    }
+
                     const localUrl = URL.createObjectURL(file);
                     preview.src = localUrl;
                     previewWrap.style.display = "block";
@@ -2082,7 +2146,6 @@
                             const shareUrl = `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`;
                             const card = bar.closest(".post-card");
 
-                            // Show the share link directly under the action buttons.
                             let shareBox = card?.querySelector(".post-share-box");
                             if (!shareBox) {
                                 shareBox = document.createElement("div");
@@ -2118,8 +2181,6 @@
                             shareBox.classList.toggle("show", willShow);
 
                             if (willShow) {
-                                // The post-specific link is always shown in the share box.
-                                // Native sharing is intentionally not opened automatically.
                                 const alreadyCounted = button.dataset.shared === "1";
                                 if (!alreadyCounted) {
                                     button.dataset.shared = "1";
@@ -2182,7 +2243,6 @@
             const posts = [];
             snapshot.forEach(s => posts.push({ id: s.id, ...s.data() }));
 
-            // Newest first. Also keep older posts that may not have createdAt.
             const postTime = (post) => {
                 const value = post.createdAt ?? post.timestamp ?? post.date ?? post.created_at ?? 0;
                 if (value && typeof value.toMillis === "function") return value.toMillis();
@@ -2274,8 +2334,6 @@
         window.addEventListener("load", () => setTimeout(focusSharedPost, 300));
 
         function listenToPosts() {
-            // Do not use Firestore orderBy here: older posts without createdAt
-            // would disappear completely. Sort them in the browser instead.
             const postsQuery = query(collection(db, "posts"));
             onSnapshot(postsQuery, renderPosts, error => {
                 console.error(error);
@@ -2326,6 +2384,107 @@
         $("#admin-publish")?.addEventListener("click", publishAdminPost);
 
         listenToPosts();
+        
+        // ================= SIDE ADS JAVASCRIPT LOGIC =================
+        let adminLeftAdUrl = "";
+        let adminRightAdUrl = "";
+
+        // Admin: Upload Left Ad Image
+        $("#admin-left-ad-file")?.addEventListener("change", async (e) => {
+            const file = e.target.files?.[0];
+            if(!file) return;
+            $("#admin-left-ad-status").textContent = "Uploading...";
+            try {
+                adminLeftAdUrl = await uploadToCloudinary(file);
+                $("#admin-left-ad-status").textContent = "Uploaded!";
+                $("#admin-left-ad-preview").src = adminLeftAdUrl;
+                $("#admin-left-ad-preview").style.display = "block";
+            } catch (err) {
+                $("#admin-left-ad-status").textContent = "Error";
+                showStatus(err.message);
+            }
+        });
+
+        // Admin: Upload Right Ad Image
+        $("#admin-right-ad-file")?.addEventListener("change", async (e) => {
+            const file = e.target.files?.[0];
+            if(!file) return;
+            $("#admin-right-ad-status").textContent = "Uploading...";
+            try {
+                adminRightAdUrl = await uploadToCloudinary(file);
+                $("#admin-right-ad-status").textContent = "Uploaded!";
+                $("#admin-right-ad-preview").src = adminRightAdUrl;
+                $("#admin-right-ad-preview").style.display = "block";
+            } catch (err) {
+                $("#admin-right-ad-status").textContent = "Error";
+                showStatus(err.message);
+            }
+        });
+
+        // Admin: Save Ads to Firebase
+        $("#admin-save-ads-btn")?.addEventListener("click", async () => {
+            if (!isAdmin()) return;
+            const leftLink = $("#admin-left-ad-link").value.trim();
+            const rightLink = $("#admin-right-ad-link").value.trim();
+            
+            try {
+                await setDoc(doc(db, "siteSettings", "sideAds"), {
+                    leftAdUrl: adminLeftAdUrl,
+                    leftLink: leftLink,
+                    rightAdUrl: adminRightAdUrl,
+                    rightLink: rightLink,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                showStatus("Ads successfully saved and published!", true);
+                fetchAndDisplayAds(); 
+            } catch (error) {
+                showStatus("Failed to save ads: " + error.message);
+            }
+        });
+
+        // Client: Fetch and Display Ads
+        async function fetchAndDisplayAds() {
+            try {
+                const snap = await getDoc(doc(db, "siteSettings", "sideAds"));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    
+                    // Display Left Ad
+                    if (data.leftAdUrl) {
+                        $("#client-left-ad-img").src = data.leftAdUrl;
+                        $("#client-left-ad-img").style.display = "block";
+                        $("#client-left-ad").href = data.leftLink || "#";
+                        $("#client-left-ad").classList.add("active-ad");
+                        
+                        adminLeftAdUrl = data.leftAdUrl;
+                        $("#admin-left-ad-preview").src = data.leftAdUrl;
+                        $("#admin-left-ad-preview").style.display = "block";
+                        if($("#admin-left-ad-link")) $("#admin-left-ad-link").value = data.leftLink || "";
+                    } else {
+                        $("#client-left-ad").classList.remove("active-ad");
+                    }
+
+                    // Display Right Ad
+                    if (data.rightAdUrl) {
+                        $("#client-right-ad-img").src = data.rightAdUrl;
+                        $("#client-right-ad-img").style.display = "block";
+                        $("#client-right-ad").href = data.rightLink || "#";
+                        $("#client-right-ad").classList.add("active-ad");
+                        
+                        adminRightAdUrl = data.rightAdUrl;
+                        $("#admin-right-ad-preview").src = data.rightAdUrl;
+                        $("#admin-right-ad-preview").style.display = "block";
+                        if($("#admin-right-ad-link")) $("#admin-right-ad-link").value = data.rightLink || "";
+                    } else {
+                        $("#client-right-ad").classList.remove("active-ad");
+                    }
+                }
+            } catch (error) {
+                console.warn("Ads fetch failed:", error);
+            }
+        }
+
+        fetchAndDisplayAds();
     </script>
 
     <div id="imageLightbox" class="image-lightbox" aria-hidden="true">
