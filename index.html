@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrindFlow</title>
-    <!-- Like / Comment / Share / Favorite UI v3 + Image Zoom v5 -->
-    <!-- Font Awesome for Icons -->
+    <!-- Like / Comment / Share / Favorite UI + Image Zoom + Dual Side Ads + Full Admin -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -30,12 +29,10 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            /* Subtle background glow */
             background-image: radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.08), transparent 25%),
                               radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.08), transparent 25%);
         }
 
-        /* Glassmorphism Base Class */
         .glass-panel {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(16px);
@@ -45,7 +42,6 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Navbar */
         header {
             padding: 15px 30px;
             display: flex;
@@ -80,7 +76,6 @@
             text-shadow: 0 0 8px rgba(176, 38, 255, 0.6);
         }
 
-        /* Main Content Area */
         main {
             flex: 1;
             padding: 30px 15px;
@@ -90,7 +85,7 @@
         }
 
         .view-section {
-            display: none; /* Hidden by default, toggled via JS */
+            display: none;
             animation: fadeIn 0.4s ease-in-out;
         }
 
@@ -103,10 +98,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Forms & Inputs */
-        .form-group {
-            margin-bottom: 15px;
-        }
+        .form-group { margin-bottom: 15px; }
 
         textarea, input[type="text"], select {
             width: 100%;
@@ -124,575 +116,104 @@
             box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
         }
 
-        /* Neon Buttons */
-        .btn-neon-blue {
-            background: transparent;
-            color: var(--neon-blue);
-            border: 1px solid var(--neon-blue);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
-            transition: 0.3s;
+        .btn-neon-blue, .btn-neon-purple {
+            background: transparent; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.3s;
         }
-        .btn-neon-blue:hover {
-            background: var(--neon-blue);
-            color: var(--dark-bg);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
-        }
-
-        .btn-neon-purple {
-            background: transparent;
-            color: var(--neon-purple);
-            border: 1px solid var(--neon-purple);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(176, 38, 255, 0.2);
-            transition: 0.3s;
-        }
-        .btn-neon-purple:hover {
-            background: var(--neon-purple);
-            color: white;
-            box-shadow: 0 0 15px rgba(176, 38, 255, 0.6);
-        }
+        .btn-neon-blue { color: var(--neon-blue); border: 1px solid var(--neon-blue); box-shadow: 0 0 8px rgba(0, 229, 255, 0.2); }
+        .btn-neon-blue:hover { background: var(--neon-blue); color: var(--dark-bg); box-shadow: 0 0 15px rgba(0, 229, 255, 0.6); }
+        .btn-neon-purple { color: var(--neon-purple); border: 1px solid var(--neon-purple); box-shadow: 0 0 8px rgba(176, 38, 255, 0.2); }
+        .btn-neon-purple:hover { background: var(--neon-purple); color: white; box-shadow: 0 0 15px rgba(176, 38, 255, 0.6); }
 
         .btn-neon-gold {
-            background: transparent;
-            color: var(--neon-gold);
-            border: 1px solid var(--neon-gold);
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
+            background: transparent; color: var(--neon-gold); border: 1px solid var(--neon-gold);
+            padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.3s;
         }
-        .btn-neon-gold:hover {
-            background: var(--neon-gold);
-            color: var(--dark-bg);
-            box-shadow: 0 0 10px rgba(255, 207, 0, 0.6);
-        }
+        .btn-neon-gold:hover { background: var(--neon-gold); color: var(--dark-bg); box-shadow: 0 0 10px rgba(255, 207, 0, 0.6); }
 
         .btn-danger {
-            background: transparent;
-            color: #ff4d4d;
-            border: 1px solid #ff4d4d;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.3s;
+            background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d;
+            padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.3s;
         }
-        .btn-danger:hover {
-            background: #ff4d4d;
-            color: white;
-        }
+        .btn-danger:hover { background: #ff4d4d; color: white; }
 
-        /* Post Card */
-        .post-card {
-            padding: 14px;
-            margin-bottom: 14px;
-        }
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .post-user {
-            font-weight: bold;
-            color: var(--neon-blue);
-        }
-        .post-content {
-            margin-bottom: 10px;
-            line-height: 1.45;
-            font-size: 15px;
-            color: #ffffff;
-            overflow-wrap: anywhere;
-        }
-        .post-link a {
-            color: var(--neon-purple);
-            text-decoration: none;
-        }
-        .post-link a:hover {
-            text-decoration: underline;
-        }
-        .post-image {
-            width: 100%;
-            max-height: 300px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .post-card { padding: 14px; margin-bottom: 14px; }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .post-user { font-weight: bold; color: var(--neon-blue); }
+        .post-content { margin-bottom: 10px; line-height: 1.45; font-size: 15px; color: #ffffff; overflow-wrap: anywhere; }
+        .post-link a { color: var(--neon-purple); text-decoration: none; }
+        .post-link a:hover { text-decoration: underline; }
         
-        .post-image-wrap {
-            position: relative;
-            overflow: hidden;
-            cursor: zoom-in;
-            border-radius: 12px;
-        }
-        .post-image-wrap img {
-            display: block;
-            width: 100%;
-            height: auto;
-            max-width: 100%;
-            object-fit: contain;
-            transition: transform .18s ease;
-        }
-        .post-image-wrap:hover img {
-            transform: scale(1.025);
-        }
+        .post-image-wrap { position: relative; overflow: hidden; cursor: zoom-in; border-radius: 12px; }
+        .post-image-wrap img { display: block; width: 100%; height: auto; max-width: 100%; object-fit: contain; transition: transform .18s ease; }
+        .post-image-wrap:hover img { transform: scale(1.025); }
         .post-image-zoom-hint {
-            position: absolute;
-            right: 10px;
-            bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 9px;
-            border-radius: 999px;
-            background: rgba(0,0,0,.62);
-            color: #fff;
-            font-size: 12px;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(4px);
-            transition: opacity .18s ease, transform .18s ease;
+            position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px;
+            padding: 7px 9px; border-radius: 999px; background: rgba(0,0,0,.62); color: #fff; font-size: 12px;
+            pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .18s ease, transform .18s ease;
         }
-        .post-image-wrap:hover .post-image-zoom-hint {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .post-image-wrap:hover .post-image-zoom-hint { opacity: 1; transform: translateY(0); }
+        
         .image-lightbox {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: rgba(0,0,0,.92);
+            position: fixed; inset: 0; z-index: 99999; display: none; align-items: center; justify-content: center;
+            padding: 24px; background: rgba(0,0,0,.92);
         }
-        .image-lightbox.show {
-            display: flex;
-        }
-        .image-lightbox img {
-            max-width: 96vw;
-            max-height: 92vh;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 12px 60px rgba(0,0,0,.55);
-            cursor: zoom-out;
-        }
+        .image-lightbox.show { display: flex; }
+        .image-lightbox img { max-width: 96vw; max-height: 92vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 60px rgba(0,0,0,.55); cursor: zoom-out; }
         .image-lightbox-close {
-            position: fixed;
-            top: 16px;
-            right: 18px;
-            width: 42px;
-            height: 42px;
-            border: 0;
-            border-radius: 50%;
-            background: rgba(255,255,255,.12);
-            color: #fff;
-            font-size: 25px;
-            cursor: pointer;
-            z-index: 100000;
+            position: fixed; top: 16px; right: 18px; width: 42px; height: 42px; border: 0; border-radius: 50%;
+            background: rgba(255,255,255,.12); color: #fff; font-size: 25px; cursor: pointer; z-index: 100000;
         }
-        .image-lightbox-close:hover {
-            background: rgba(255,255,255,.22);
-        }
-        body.image-lightbox-open {
-            overflow: hidden;
-        }
-        @media (max-width: 600px) {
-            .image-lightbox {
-                padding: 10px;
-            }
-        }
+        .image-lightbox-close:hover { background: rgba(255,255,255,.22); }
+        body.image-lightbox-open { overflow: hidden; }
 
-        .post-card.shared-target {
-            outline: 2px solid rgba(0, 220, 255, .55);
-            box-shadow: 0 0 0 4px rgba(0, 220, 255, .08), 0 12px 40px rgba(0,0,0,.18);
-        }
-        .post-actions {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 12px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(255,255,255,.07);
-        }
-        .post-actions:empty {
-            display: none;
-        }
+        .post-card.shared-target { outline: 2px solid rgba(0, 220, 255, .55); box-shadow: 0 0 0 4px rgba(0, 220, 255, .08), 0 12px 40px rgba(0,0,0,.18); }
+        .post-actions { display: flex; align-items: center; gap: 4px; margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.07); }
+        .post-actions:empty { display: none; }
         .post-action-btn {
-            appearance: none;
-            -webkit-appearance: none;
-            background: transparent !important;
-            border: 0 !important;
-            box-shadow: none !important;
-            color: #fff !important;
-            padding: 8px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-size: 14px;
-            line-height: 1;
-            transition: background .18s ease, color .18s ease, transform .18s ease;
+            appearance: none; background: transparent !important; border: 0 !important; color: #fff !important;
+            padding: 8px 10px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center;
+            gap: 6px; font-size: 14px; transition: background .18s ease, transform .18s ease;
         }
-        .post-action-btn i {
-            color: inherit !important;
-            font-size: 14px;
-        }
-        .post-action-btn:hover {
-            background: rgba(255,255,255,.08) !important;
-            color: #fff !important;
-        }
-        .post-action-btn:active {
-            transform: scale(.97);
-        }
-        .post-action-btn.active,
-        .post-action-btn.favorited {
-            color: #fff !important;
-            background: rgba(255,255,255,.10) !important;
-        }
-        .post-action-btn .count {
-            color: #fff;
-            opacity: .9;
-        }
+        .post-action-btn:hover { background: rgba(255,255,255,.08) !important; }
+        .post-action-btn:active { transform: scale(.97); }
+        .post-action-btn.active, .post-action-btn.favorited { background: rgba(255,255,255,.10) !important; }
+        .post-action-btn .count { color: #fff; opacity: .9; }
+        
         .post-share-box {
-            display: none;
-            margin-top: 8px;
-            padding: 10px 12px;
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 10px;
-            background: rgba(255,255,255,.025);
-            gap: 8px;
-            align-items: center;
+            display: none; margin-top: 8px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.08);
+            border-radius: 10px; background: rgba(255,255,255,.025); gap: 8px; align-items: center;
         }
-        .post-share-box.show {
-            display: flex;
-        }
-        .post-share-url {
-            flex: 1;
-            min-width: 0;
-            color: #fff;
-            font-size: 13px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-decoration: none;
-        }
-        .post-share-url:hover {
-            text-decoration: underline;
-        }
-        .post-share-copy,
-        .post-share-open {
-            flex: 0 0 auto;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,.16);
-            color: #fff;
-            border-radius: 7px;
-            padding: 7px 10px;
-            cursor: pointer;
-        }
-        .post-share-copy:hover,
-        .post-share-open:hover {
-            background: rgba(255,255,255,.08);
-        }
-        @media (max-width: 600px) {
-            .post-actions {
-                gap: 2px;
-            }
-            .post-action-btn {
-                padding: 8px 7px;
-                font-size: 13px;
-            }
-            .post-share-box {
-                flex-wrap: wrap;
-            }
-            .post-share-url {
-                flex-basis: 100%;
-            }
+        .post-share-box.show { display: flex; }
+        .post-share-url { flex: 1; min-width: 0; color: #fff; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .post-share-copy, .post-share-open {
+            flex: 0 0 auto; background: transparent; border: 1px solid rgba(255,255,255,.16);
+            color: #fff; border-radius: 7px; padding: 7px 10px; cursor: pointer;
         }
 
-        /* Section Containers */
-        .create-post-box {
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        /* Footer */
-        footer {
-            padding: 20px;
-            text-align: center;
-            color: var(--text-muted);
-            border-radius: 16px 16px 0 0;
-            margin-top: auto;
-        }
-        footer span {
-            color: var(--neon-gold);
-            font-weight: bold;
-        }
+        .create-post-box { padding: 20px; margin-bottom: 30px; }
+        footer { padding: 20px; text-align: center; color: var(--text-muted); border-radius: 16px 16px 0 0; margin-top: auto; }
+        footer span { color: var(--neon-gold); font-weight: bold; }
+        .dynamic-post:empty, .post-card:empty { display: none !important; }
 
-        /* Hide empty post shells; real Firebase posts remain visible. */
-        .dynamic-post:empty,
-        .dynamic-post.empty-post,
-        .post-card:empty {
-            display: none !important;
-        }
+        .rich-editor-wrap { border: 1px solid rgba(255,255,255,.12); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,.38); }
+        .rich-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.035); }
+        .rich-tool { width: 36px; height: 34px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.04); color: #fff; cursor: pointer; }
+        .rich-tool:hover, .rich-tool.active { color: var(--neon-blue); border-color: var(--neon-blue); background: rgba(0,229,255,.08); }
+        .rich-color-tool { position: relative; width: 36px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.04); color: var(--neon-blue); cursor: pointer; }
+        .rich-color-tool input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .rich-menu-wrap { position: relative; display: inline-flex; }
+        .rich-menu-btn { display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
+        .rich-popup-menu { position: absolute; top: calc(100% + 5px); left: 0; z-index: 1000; display: none; min-width: 92px; padding: 5px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; background: #151620; box-shadow: 0 10px 28px rgba(0,0,0,.45); }
+        .rich-popup-menu.open { display: flex; flex-direction: column; }
+        .rich-popup-menu button { border: 0; border-radius: 6px; padding: 7px 10px; background: transparent; color: #fff; text-align: left; cursor: pointer; white-space: nowrap; }
+        .rich-popup-menu button:hover { background: rgba(0,229,255,.12); color: var(--neon-blue); }
 
-        .rich-editor-wrap {
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 12px;
-            overflow: hidden;
-            background: rgba(0,0,0,.38);
-        }
-        .rich-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-            padding: 8px;
-            border-bottom: 1px solid rgba(255,255,255,.10);
-            background: rgba(255,255,255,.035);
-        }
-        .rich-tool {
-            width: 36px;
-            height: 34px;
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 7px;
-            background: rgba(255,255,255,.04);
-            color: #fff;
-            cursor: pointer;
-        }
-        .rich-tool:hover, .rich-tool.active {
-            color: var(--neon-blue);
-            border-color: var(--neon-blue);
-            background: rgba(0,229,255,.08);
-        }
-        .rich-color-tool {
-            position: relative;
-            width: 36px;
-            height: 34px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 7px;
-            background: rgba(255,255,255,.04);
-            color: var(--neon-blue);
-            cursor: pointer;
-            overflow: hidden;
-        }
-        .rich-color-tool:hover {
-            border-color: var(--neon-blue);
-            background: rgba(0,229,255,.08);
-        }
-        .rich-color-tool input[type="color"] {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
+        .post-editor { min-height: 145px; max-height: 420px; overflow-y: auto; padding: 14px; outline: none; color: #fff !important; line-height: 1.65; background: transparent; }
+        .post-editor:empty::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+        .post-editor mark { padding: 0 3px; border-radius: 3px; background: #fff176; color: #111; }
+        .post-editor a, .post-content a { color: var(--neon-blue); text-decoration: underline; }
 
-        .rich-heading {
-            height: 34px;
-            padding: 0 8px;
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 7px;
-            background: #11121a;
-            color: #fff;
-            cursor: pointer;
-        }
-        .rich-menu-wrap {
-            position: relative;
-            display: inline-flex;
-        }
-        .rich-menu-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-        .rich-popup-menu {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
-            z-index: 1000;
-            display: none;
-            min-width: 92px;
-            padding: 5px;
-            border: 1px solid rgba(255,255,255,.14);
-            border-radius: 9px;
-            background: #151620;
-            box-shadow: 0 10px 28px rgba(0,0,0,.45);
-        }
-        .rich-popup-menu.open {
-            display: flex;
-            flex-direction: column;
-        }
-        .rich-popup-menu button {
-            border: 0;
-            border-radius: 6px;
-            padding: 7px 10px;
-            background: transparent;
-            color: #fff;
-            text-align: left;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .rich-popup-menu button:hover {
-            background: rgba(0,229,255,.12);
-            color: var(--neon-blue);
-        }
-        .rich-heading-menu {
-            min-width: 125px;
-        }
-
-        .post-editor {
-            min-height: 145px;
-            max-height: 420px;
-            overflow-y: auto;
-            padding: 14px;
-            outline: none;
-            color: #fff !important;
-            line-height: 1.65;
-            background: transparent;
-        }
-        .post-editor p,
-        .post-editor div,
-        .post-editor h1,
-        .post-editor h2,
-        .post-editor h3,
-        .post-editor h4,
-        .post-editor li,
-        .post-editor strong,
-        .post-editor b,
-        .post-editor em,
-        .post-editor i,
-        .post-editor u {
-            color: inherit !important;
-        }
-        .post-editor a {
-            color: var(--neon-blue) !important;
-        }
-        .post-editor mark {
-            color: #111 !important;
-            background: #fff176 !important;
-        }
-        .post-editor font[color] {
-            color: inherit !important;
-        }
-        .post-editor:empty::before {
-            content: attr(data-placeholder);
-            color: var(--text-muted);
-            pointer-events: none;
-        }
-        .post-editor h2, .post-editor h3, .post-editor h4 {
-            margin: 8px 0;
-            line-height: 1.25;
-        }
-        .post-editor mark {
-            padding: 0 3px;
-            border-radius: 3px;
-            background: #fff176;
-            color: #111;
-        }
-        .post-editor a, .post-content a {
-            color: var(--neon-blue);
-            text-decoration: underline;
-        }
-        .post-content h2 { font-size: 1.55rem; margin: 8px 0; }
-        .post-content h3 { font-size: 1.3rem; margin: 7px 0; }
-        .post-content h4 { font-size: 1.12rem; margin: 6px 0; }
-        .post-content p { margin: 0 0 8px; }
-        .post-content ul, .post-content ol { margin: 8px 0 8px 24px; }
-
-        /* Compact post images: show the complete image without cropping. */
-        .post-content-image,
-        .post-image,
-        .feed-post img,
-        .post-card img {
-            display: block;
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            max-height: 420px;
-            object-fit: contain;
-            object-position: center;
-            margin: 8px auto 0;
-            border-radius: 10px;
-        }
-
-        .post-image-wrap {
-            width: 100%;
-            max-width: 100%;
-            max-height: 420px;
-            min-height: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: rgba(0,0,0,.10);
-            border-radius: 10px;
-        }
-
-        .post-image-wrap img {
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            max-height: 420px;
-            object-fit: contain;
-        }
-
-        /* Old pasted black text should remain readable on the dark feed. */
-        .post-content [style*="color: rgb(0, 0, 0)"],
-        .post-content [style*="color: #000"],
-        .post-content [style*="color:#000"],
-        .post-content [style*="color: black"] {
-            color: #ffffff !important;
-        }
-
-        #post-editor {
-            color: #ffffff !important;
-            caret-color: #ffffff !important;
-        }
-        #post-editor a {
-            color: var(--neon-blue) !important;
-            text-decoration: underline;
-        }
-        #post-editor mark {
-            background: #fff176 !important;
-            color: #111 !important;
-        }
-
-        /* Pasted Word/Google/website backgrounds must not create white boxes. */
-        #post-editor [style*="background"],
-        .post-editor [style*="background"] {
-            background-color: transparent !important;
-        }
-        #post-editor mark,
-        .post-editor mark {
-            background: #fff176 !important;
-            color: #111 !important;
-        }
-        .post-content [style*="background-color: rgb(255, 255, 255)"],
-        .post-content [style*="background-color:#fff"],
-        .post-content [style*="background-color: #fff"],
-        .post-content [style*="background-color:white"],
-        .post-content [style*="background-color: white"] {
-            background-color: transparent !important;
-        }
-
-        /* ================= SIDE ADS CSS (Safe Layout) ================= */
+        /* ================= SIDE ADS CSS (Dual Stack Layout) ================= */
         .side-ad-container {
             position: fixed;
             top: 90px;
@@ -705,32 +226,33 @@
             background: rgba(0, 0, 0, 0.2);
             border: 1px dashed rgba(255, 255, 255, 0.1);
             transition: 0.3s;
+            flex-direction: column;
+            gap: 2px;
         }
-        .side-ad-container:hover {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
-        }
+        .side-ad-container:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
         .side-ad-container.left-ad { left: 15px; }
         .side-ad-container.right-ad { right: 15px; }
         
-        .side-ad-container img {
+        .side-ad-slot {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+            text-decoration: none;
         }
+        .side-ad-slot img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
-        /* Laptops aur badi screens par ads show honge */
         @media (min-width: 1100px) {
-            .side-ad-container.active-ad {
-                display: block;
-            }
+            .side-ad-container.active-ad { display: flex; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Glassmorphic Header -->
+    <!-- Header -->
     <header class="glass-panel">
         <div class="logo" id="frindflow-logo" title="FrindFlow"><i class="fa-solid fa-cube"></i> FrindFlow</div>
         <nav>
@@ -740,21 +262,31 @@
         </nav>
     </header>
 
-    <!-- Left & Right Ads (Client Side) -->
-    <a id="client-left-ad" href="#" target="_blank" class="side-ad-container left-ad">
-        <img id="client-left-ad-img" style="display:none;" alt="Left Ad">
-    </a>
-    <a id="client-right-ad" href="#" target="_blank" class="side-ad-container right-ad">
-        <img id="client-right-ad-img" style="display:none;" alt="Right Ad">
-    </a>
+    <!-- Left Ads (Client Side) -->
+    <div id="client-left-container" class="side-ad-container left-ad">
+        <a id="client-left-top" class="side-ad-slot" href="#" target="_blank" style="display:none;">
+            <img id="client-left-top-img" style="display:none;" alt="Left Top Ad">
+        </a>
+        <a id="client-left-bottom" class="side-ad-slot" href="#" target="_blank" style="display:none;">
+            <img id="client-left-bottom-img" style="display:none;" alt="Left Bottom Ad">
+        </a>
+    </div>
 
-    <!-- Main Dynamic Container -->
+    <!-- Right Ads (Client Side) -->
+    <div id="client-right-container" class="side-ad-container right-ad">
+        <a id="client-right-top" class="side-ad-slot" href="#" target="_blank" style="display:none;">
+            <img id="client-right-top-img" style="display:none;" alt="Right Top Ad">
+        </a>
+        <a id="client-right-bottom" class="side-ad-slot" href="#" target="_blank" style="display:none;">
+            <img id="client-right-bottom-img" style="display:none;" alt="Right Bottom Ad">
+        </a>
+    </div>
+
+    <!-- Main Container -->
     <main>
         
         <!-- ================= FEED VIEW ================= -->
         <section id="feed-view" class="view-section active">
-            
-            <!-- Create Post Box -->
             <div class="glass-panel create-post-box">
                 <h3 style="margin-bottom: 15px; color: var(--neon-blue);">Create a Post</h3>
                 <div class="form-group">
@@ -766,40 +298,11 @@
                             <button type="button" class="rich-tool" data-cmd="highlight" title="Highlight"><i class="fa-solid fa-highlighter"></i></button>
                             <label class="rich-color-tool" title="Font colour">
                                 <i class="fa-solid fa-font"></i>
-                                <input type="color" id="post-font-color" value="#00e5ff" aria-label="Font colour">
+                                <input type="color" id="post-font-color" value="#00e5ff">
                             </label>
-                            <div class="rich-menu-wrap">
-                                <button type="button" class="rich-tool rich-menu-btn" id="post-font-size-btn" title="Text size" aria-label="Text size" aria-expanded="false">
-                                    <i class="fa-solid fa-text-height"></i>
-                                </button>
-                                <div class="rich-popup-menu" id="post-font-size-menu" role="menu">
-                                    <button type="button" data-size="12">12 px</button>
-                                    <button type="button" data-size="14">14 px</button>
-                                    <button type="button" data-size="16">16 px</button>
-                                    <button type="button" data-size="18">18 px</button>
-                                    <button type="button" data-size="20">20 px</button>
-                                    <button type="button" data-size="24">24 px</button>
-                                    <button type="button" data-size="28">28 px</button>
-                                    <button type="button" data-size="32">32 px</button>
-                                    <button type="button" data-size="40">40 px</button>
-                                </div>
-                            </div>
-                            <div class="rich-menu-wrap">
-                                <button type="button" class="rich-tool rich-menu-btn" id="post-heading-btn" title="Heading" aria-label="Heading" aria-expanded="false">
-                                    <strong>H</strong>
-                                </button>
-                                <div class="rich-popup-menu rich-heading-menu" id="post-heading-menu" role="menu">
-                                    <button type="button" data-heading="p">Normal</button>
-                                    <button type="button" data-heading="h2">Heading 1</button>
-                                    <button type="button" data-heading="h3">Heading 2</button>
-                                    <button type="button" data-heading="h4">Heading 3</button>
-                                </div>
-                            </div>
-                            <button type="button" class="rich-tool" id="post-link-btn" title="Attach link to selected word or line"><i class="fa-solid fa-link"></i></button>
+                            <button type="button" class="rich-tool" id="post-link-btn" title="Link"><i class="fa-solid fa-link"></i></button>
                             <button type="button" class="rich-tool" id="post-unlink-btn" title="Remove link"><i class="fa-solid fa-link-slash"></i></button>
-                            <button type="button" class="rich-tool" data-cmd="insertUnorderedList" title="Bullet list"><i class="fa-solid fa-list-ul"></i></button>
-                            <button type="button" class="rich-tool" data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
-                            <button type="button" class="rich-tool" id="post-clear-format" title="Clear formatting"><i class="fa-solid fa-eraser"></i></button>
+                            <button type="button" class="rich-tool" id="post-clear-format" title="Clear format"><i class="fa-solid fa-eraser"></i></button>
                         </div>
                         <div id="post-editor" class="post-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a beautiful article... Use bold, highlight, headings and links."></div>
                     </div>
@@ -808,14 +311,10 @@
                     <input id="post-link-input" type="text" placeholder="Optional post link (https://...)">
                 </div>
                 <div id="image-preview-wrap" style="display:none; margin:12px 0 16px; position:relative;">
-                    <img id="image-preview" alt="Selected image preview"
-                         style="width:100%; max-height:320px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.12); display:block;">
-                    <button id="remove-image-preview" type="button"
-                            style="position:absolute;top:8px;right:8px;border:0;border-radius:999px;width:32px;height:32px;background:rgba(0,0,0,.75);color:#fff;cursor:pointer;"
-                            title="Remove image"><i class="fa-solid fa-xmark"></i></button>
+                    <img id="image-preview" alt="Selected image preview" style="width:100%; max-height:320px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.12); display:block;">
+                    <button id="remove-image-preview" type="button" style="position:absolute;top:8px;right:8px;border:0;border-radius:999px;width:32px;height:32px;background:rgba(0,0,0,.75);color:#fff;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-                    <!-- Cloudinary / File Input Trigger -->
                     <label class="btn-neon-purple" style="cursor: pointer;">
                         <i class="fa-solid fa-image"></i> Upload Image
                         <input id="post-image-input" type="file" style="display: none;" accept="image/*">
@@ -832,7 +331,6 @@
         <section id="profile-view" class="view-section">
             <div class="glass-panel create-post-box">
                 <h2 style="color: var(--neon-purple); margin-bottom: 20px;"><i class="fa-solid fa-user-gear"></i> Profile Settings</h2>
-                
                 <div class="form-group">
                     <label style="display: block; margin-bottom: 5px; color: var(--text-muted);">Profile Visibility</label>
                     <select id="privacy-select">
@@ -841,12 +339,10 @@
                         <option value="private">Private (Only me)</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label style="display: block; margin-bottom: 5px; color: var(--text-muted);">Username</label>
                     <input type="text" value="User123">
                 </div>
-
                 <button class="btn-neon-purple" style="width: 100%; margin-top: 10px;">Save Changes</button>
             </div>
         </section>
@@ -859,51 +355,28 @@
                 </h2>
                 <p style="color: var(--text-muted); margin-bottom: 18px;">
                     Admin tools: delete posts, block users, and publish with admin bypass.
-                    <br><small style="color:#ffb86b;">Password is stored as a PBKDF2 hash, not plain text. For real hack protection, Firebase Security Rules/Auth must also restrict admin actions.</small>
                 </p>
 
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
-                    <button id="admin-refresh" class="btn-neon-gold">
-                        <i class="fa-solid fa-rotate"></i> Refresh
-                    </button>
-                    <button id="admin-exit" class="btn-danger">
-                        <i class="fa-solid fa-right-from-bracket"></i> Exit Admin
-                    </button>
+                    <button id="admin-refresh" class="btn-neon-gold"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                    <button id="admin-exit" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Exit Admin</button>
                 </div>
 
+                <!-- Window Size Settings -->
                 <div id="admin-layout-settings" style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
-                    <h4 style="color:white;margin-bottom:8px;">
-                        <i class="fa-solid fa-arrows-left-right"></i> Middle Window Size
-                    </h4>
-                    <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">
-                        Header aur footer par koi asar nahi hoga. Sirf beech ka content/feed window chhota ya bara hoga.
-                    </p>
-
+                    <h4 style="color:white;margin-bottom:8px;"><i class="fa-solid fa-arrows-left-right"></i> Middle Window Size</h4>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <input id="admin-content-width" type="range" min="520" max="1000" step="10" value="680"
-                               style="flex:1;min-width:220px;accent-color:var(--neon-gold);">
+                        <input id="admin-content-width" type="range" min="520" max="1000" step="10" value="680" style="flex:1;min-width:220px;accent-color:var(--neon-gold);">
                         <strong id="admin-content-width-value" style="min-width:75px;color:var(--neon-gold);">680 px</strong>
                     </div>
-
-                    <div id="admin-layout-preview" style="margin-top:14px;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.02);">
-                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:7px;text-align:center;">Live Preview</div>
-                        <div id="admin-layout-preview-window"
-                             style="height:72px;margin:0 auto;border:2px solid var(--neon-blue);border-radius:8px;background:linear-gradient(90deg,rgba(176,38,255,.10),rgba(0,229,255,.10));display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;overflow:hidden;">
-                            Middle content window
-                        </div>
-                    </div>
-
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-                        <button id="admin-layout-save" class="btn-neon-gold">
-                            <i class="fa-solid fa-floppy-disk"></i> Save Window Size
-                        </button>
-                        <button id="admin-layout-reset" class="btn-danger" type="button">
-                            <i class="fa-solid fa-rotate-left"></i> Reset 680 px
-                        </button>
+                        <button id="admin-layout-save" class="btn-neon-gold"><i class="fa-solid fa-floppy-disk"></i> Save Window Size</button>
+                        <button id="admin-layout-reset" class="btn-danger" type="button"><i class="fa-solid fa-rotate-left"></i> Reset</button>
                     </div>
                     <div id="admin-layout-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
                 </div>
 
+                <!-- Admin Bypass Post -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
                     <h4 style="color:white;margin-bottom:10px;">Admin Bypass Post</h4>
                     <label style="display:flex;align-items:center;gap:10px;color:var(--text-muted);margin-bottom:12px;">
@@ -920,39 +393,81 @@
 
                 <!-- Side Ads Admin Manager -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
-                    <h4 style="color:white;margin-bottom:15px;"><i class="fa-solid fa-ad"></i> Side Ads Manager (160x600)</h4>
+                    <h4 style="color:white;margin-bottom:5px;"><i class="fa-solid fa-ad"></i> Side Ads Manager (Up to 4 Ads)</h4>
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:15px;">Tip: Leave "Bottom Ad" empty if you want "Top Ad" to fill the full vertical height (160x600).</p>
                     
-                    <div style="display:flex;gap:20px;flex-wrap:wrap;">
-                        <!-- Left Ad Edit -->
-                        <div style="flex:1;min-width:250px;background:rgba(255,255,255,.02);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
-                            <strong style="color:var(--neon-blue);display:block;margin-bottom:10px;">Left Ad</strong>
-                            <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
-                                <i class="fa-solid fa-upload"></i> Upload Image
-                                <input id="admin-left-ad-file" type="file" style="display: none;" accept="image/*">
-                            </label>
-                            <span id="admin-left-ad-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
-                            <img id="admin-left-ad-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
-                            <input id="admin-left-ad-link" type="text" placeholder="Ad Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+                        
+                        <!-- LEFT SIDE ADS -->
+                        <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
+                            <strong style="color:var(--neon-blue);display:block;margin-bottom:15px;font-size:16px;">Left Side Ads</strong>
+                            
+                            <!-- Left Top Ad -->
+                            <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot</span>
+                                <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                    <i class="fa-solid fa-upload"></i> Upload Image
+                                    <input id="admin-left-top-file" type="file" style="display: none;" accept="image/*">
+                                </label>
+                                <span id="admin-left-top-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                                <img id="admin-left-top-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                                <button type="button" id="admin-left-top-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
+                                <input id="admin-left-top-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                            </div>
+
+                            <!-- Left Bottom Ad -->
+                            <div>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot</span>
+                                <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                    <i class="fa-solid fa-upload"></i> Upload Image
+                                    <input id="admin-left-bottom-file" type="file" style="display: none;" accept="image/*">
+                                </label>
+                                <span id="admin-left-bottom-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                                <img id="admin-left-bottom-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                                <button type="button" id="admin-left-bottom-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
+                                <input id="admin-left-bottom-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                            </div>
                         </div>
 
-                        <!-- Right Ad Edit -->
-                        <div style="flex:1;min-width:250px;background:rgba(255,255,255,.02);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
-                            <strong style="color:var(--neon-purple);display:block;margin-bottom:10px;">Right Ad</strong>
-                            <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
-                                <i class="fa-solid fa-upload"></i> Upload Image
-                                <input id="admin-right-ad-file" type="file" style="display: none;" accept="image/*">
-                            </label>
-                            <span id="admin-right-ad-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
-                            <img id="admin-right-ad-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
-                            <input id="admin-right-ad-link" type="text" placeholder="Ad Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                        <!-- RIGHT SIDE ADS -->
+                        <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);">
+                            <strong style="color:var(--neon-purple);display:block;margin-bottom:15px;font-size:16px;">Right Side Ads</strong>
+                            
+                            <!-- Right Top Ad -->
+                            <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot</span>
+                                <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                    <i class="fa-solid fa-upload"></i> Upload Image
+                                    <input id="admin-right-top-file" type="file" style="display: none;" accept="image/*">
+                                </label>
+                                <span id="admin-right-top-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                                <img id="admin-right-top-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                                <button type="button" id="admin-right-top-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
+                                <input id="admin-right-top-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                            </div>
+
+                            <!-- Right Bottom Ad -->
+                            <div>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot</span>
+                                <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
+                                    <i class="fa-solid fa-upload"></i> Upload Image
+                                    <input id="admin-right-bottom-file" type="file" style="display: none;" accept="image/*">
+                                </label>
+                                <span id="admin-right-bottom-status" style="font-size:12px;color:var(--text-muted);margin-left:5px;"></span>
+                                <img id="admin-right-bottom-preview" style="width:100px;height:auto;display:none;margin-bottom:10px;border-radius:4px;">
+                                <button type="button" id="admin-right-bottom-remove" class="btn-danger" style="display:none;margin-bottom:10px;">Remove</button>
+                                <input id="admin-right-bottom-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
+                            </div>
                         </div>
+
                     </div>
                     
-                    <button id="admin-save-ads-btn" class="btn-neon-gold" style="margin-top:15px;width:100%;">
-                        <i class="fa-solid fa-floppy-disk"></i> Save & Publish Ads
+                    <button id="admin-save-ads-btn" class="btn-neon-gold" style="margin-top:20px;width:100%;font-size:15px;padding:12px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Publish All Ads
                     </button>
                 </div>
 
+                <!-- POST MANAGEMENT (RESTORED) -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
                     <h4 style="color:white;margin-bottom:10px;">Post Management</h4>
                     <div id="admin-post-list" style="display:grid;gap:10px;">
@@ -960,34 +475,29 @@
                     </div>
                 </div>
 
+                <!-- USER MANAGEMENT (RESTORED) -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;">
                     <h4 style="color:white;margin-bottom:10px;">User Management</h4>
                     <div id="admin-user-list" style="display:grid;gap:10px;">
                         <div style="color:var(--text-muted);">Admin login required.</div>
                     </div>
                 </div>
+
             </div>
         </section>
 
     </main>
 
-    <!-- Glassmorphic Footer -->
+    <!-- Footer -->
     <footer class="glass-panel">
         <p>&copy; 2026 <span>FrindFlow</span>. All rights reserved.</p>
     </footer>
 
-
     <!-- Firebase + Cloudinary -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import {
-            getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-        import {
-            getFirestore, collection, addDoc, query, orderBy, onSnapshot,
-            serverTimestamp, deleteDoc, doc, getDoc, setDoc, updateDoc
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAt1Ovfnj8MuAf2zddjH9ShdKfQyX9vcMA",
@@ -1022,17 +532,10 @@
             const enc = new TextEncoder();
             const salt = Uint8Array.from(atob(ADMIN_PASSWORD_SALT), c => c.charCodeAt(0));
             const expected = Uint8Array.from(atob(ADMIN_PASSWORD_HASH), c => c.charCodeAt(0));
-
-            const baseKey = await crypto.subtle.importKey(
-                "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits"]
-            );
-            const bits = await crypto.subtle.deriveBits(
-                { name: "PBKDF2", salt, iterations: ADMIN_PASSWORD_ITERATIONS, hash: "SHA-256" },
-                baseKey, 256
-            );
+            const baseKey = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits"]);
+            const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: ADMIN_PASSWORD_ITERATIONS, hash: "SHA-256" }, baseKey, 256);
             const actual = new Uint8Array(bits);
             if (actual.length !== expected.length) return false;
-
             let diff = 0;
             for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
             return diff === 0;
@@ -1041,9 +544,7 @@
         const $ = (s) => document.querySelector(s);
 
         function escapeHtml(value = "") {
-            return String(value).replace(/[&<>"']/g, c => ({
-                "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-            }[c]));
+            return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
         }
 
         function showStatus(message, good = false) {
@@ -1064,27 +565,17 @@
             const data = new FormData();
             data.append("file", file);
             data.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-            const response = await fetch(
-                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-                { method: "POST", body: data }
-            );
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: data });
             const result = await response.json();
-            if (!response.ok || !result.secure_url) {
-                throw new Error(result.error?.message || "Cloudinary upload failed.");
-            }
+            if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Cloudinary upload failed.");
             return result.secure_url;
         }
 
-
-        function isAdmin() {
-            return adminMode === true;
-        }
+        function isAdmin() { return adminMode === true; }
 
         async function openAdminLogin() {
             const password = window.prompt("Enter Admin Password:");
             if (password === null) return;
-
             try {
                 const ok = await verifyAdminPassword(password);
                 if (ok) {
@@ -1092,13 +583,11 @@
                     const navAdmin = $("#nav-admin");
                     if (navAdmin) navAdmin.style.display = "inline-block";
                     switchView("admin-view");
-                    renderAdminPanel();
                     showStatus("Admin mode enabled.", true);
                 } else {
                     showStatus("Wrong admin password.");
                 }
             } catch (e) {
-                console.error("Admin verification failed:", e);
                 showStatus("Admin verification failed.");
             }
         }
@@ -1111,68 +600,48 @@
                 logoClicks++;
                 clearTimeout(logoClickTimer);
                 logoClickTimer = setTimeout(() => { logoClicks = 0; }, 2500);
-
-                if (logoClicks >= 10) {
-                    logoClicks = 0;
-                    openAdminLogin();
-                }
+                if (logoClicks >= 10) { logoClicks = 0; openAdminLogin(); }
             });
         }
 
+        // ================= USER & POST BLOCKING LOGIC =================
         async function isBlocked(uid) {
             if (!uid) return false;
             try {
                 const snap = await getDoc(doc(db, "blockedUsers", uid));
                 return snap.exists() && snap.data()?.blocked === true;
-            } catch (e) {
-                console.warn("Block check failed:", e);
-                return false;
-            }
+            } catch (e) { return false; }
         }
 
-        async function blockUser(uid, name) {
+        window.blockUser = async function(uid, name) {
             if (!isAdmin() || !uid) return;
             try {
-                await setDoc(doc(db, "blockedUsers", uid), {
-                    blocked: true,
-                    userName: name || "User",
-                    blockedAt: serverTimestamp()
-                }, { merge: true });
+                await setDoc(doc(db, "blockedUsers", uid), { blocked: true, userName: name || "User", blockedAt: serverTimestamp() }, { merge: true });
                 showStatus(`${name || "User"} blocked.`, true);
                 renderAdminPanel();
-            } catch (e) {
-                showStatus("Block failed: " + e.message);
-            }
+            } catch (e) { showStatus("Block failed: " + e.message); }
         }
 
-        async function unblockUser(uid, name) {
+        window.unblockUser = async function(uid, name) {
             if (!isAdmin() || !uid) return;
             try {
-                await setDoc(doc(db, "blockedUsers", uid), {
-                    blocked: false,
-                    userName: name || "User",
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
+                await setDoc(doc(db, "blockedUsers", uid), { blocked: false, userName: name || "User", updatedAt: serverTimestamp() }, { merge: true });
                 showStatus(`${name || "User"} unblocked.`, true);
                 renderAdminPanel();
-            } catch (e) {
-                showStatus("Unblock failed: " + e.message);
-            }
+            } catch (e) { showStatus("Unblock failed: " + e.message); }
         }
 
-        async function deletePostAsAdmin(postId) {
+        window.deletePostAsAdmin = async function(postId) {
             if (!isAdmin()) return;
             if (!window.confirm("Delete this post?")) return;
             try {
                 await deleteDoc(doc(db, "posts", postId));
                 showStatus("Post deleted by admin.", true);
                 renderAdminPanel();
-            } catch (e) {
-                showStatus("Admin delete failed: " + e.message);
-            }
+            } catch (e) { showStatus("Admin delete failed: " + e.message); }
         }
 
-
+        // ================= LAYOUT SETTINGS LOGIC =================
         const DEFAULT_CONTENT_WIDTH = 680;
         const MIN_CONTENT_WIDTH = 560;
         const MAX_CONTENT_WIDTH = 1200;
@@ -1187,34 +656,17 @@
         function applyContentWidth(value) {
             const width = clampContentWidth(value);
             document.documentElement.style.setProperty("--content-width", `${width}px`);
-
             const slider = $("#admin-content-width");
-            const valueLabel = $("#admin-content-width-value");
-            const preview = $("#admin-layout-preview-window");
-
             if (slider) slider.value = String(width);
-            if (valueLabel) valueLabel.textContent = `${width} px`;
-
-            if (preview) {
-                const previewMax = 520;
-                const ratio = (width - MIN_CONTENT_WIDTH) / (MAX_CONTENT_WIDTH - MIN_CONTENT_WIDTH);
-                const previewWidth = Math.round(260 + ratio * (previewMax - 260));
-                preview.style.width = `${previewWidth}px`;
-            }
-
+            const label = $("#admin-content-width-value");
+            if (label) label.textContent = `${width} px`;
             return width;
         }
 
         async function loadContentWidthSetting() {
             let width = DEFAULT_CONTENT_WIDTH;
-
-            try {
-                const local = localStorage.getItem(CONTENT_WIDTH_KEY);
-                if (local) width = clampContentWidth(local);
-            } catch (_) {}
-
+            try { const local = localStorage.getItem(CONTENT_WIDTH_KEY); if (local) width = clampContentWidth(local); } catch (_) {}
             applyContentWidth(width);
-
             try {
                 const snap = await getDoc(doc(db, "siteSettings", "layout"));
                 if (snap.exists() && Number.isFinite(Number(snap.data()?.contentWidth))) {
@@ -1222,59 +674,33 @@
                     try { localStorage.setItem(CONTENT_WIDTH_KEY, String(width)); } catch (_) {}
                     applyContentWidth(width);
                 }
-            } catch (e) {
-                console.warn("Layout setting could not be loaded:", e);
-            }
+            } catch (e) {}
         }
 
         async function saveContentWidthSetting() {
             if (!isAdmin()) return;
-
             const slider = $("#admin-content-width");
             const width = applyContentWidth(slider?.value || DEFAULT_CONTENT_WIDTH);
-
             try { localStorage.setItem(CONTENT_WIDTH_KEY, String(width)); } catch (_) {}
-
             try {
-                await setDoc(doc(db, "siteSettings", "layout"), {
-                    contentWidth: width,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-
-                const status = $("#admin-layout-status");
-                if (status) status.textContent = `Saved: ${width}px. Middle window updated.`;
+                await setDoc(doc(db, "siteSettings", "layout"), { contentWidth: width, updatedAt: serverTimestamp() }, { merge: true });
                 showStatus(`Middle window set to ${width}px.`, true);
-            } catch (e) {
-                const status = $("#admin-layout-status");
-                if (status) status.textContent = `Applied on this browser (${width}px), but cloud save failed.`;
-                showStatus("Window changed here, but cloud save failed: " + e.message);
-            }
+            } catch (e) { showStatus("Window changed here, but cloud save failed."); }
         }
 
         function setupAdminLayoutSettings() {
             const slider = $("#admin-content-width");
             if (!slider) return;
-
-            slider.addEventListener("input", () => {
-                applyContentWidth(slider.value);
-                const status = $("#admin-layout-status");
-                if (status) status.textContent = "Live preview — click Save Window Size to keep this setting.";
-            });
-
+            slider.addEventListener("input", () => { applyContentWidth(slider.value); });
             $("#admin-layout-save")?.addEventListener("click", saveContentWidthSetting);
-
-            $("#admin-layout-reset")?.addEventListener("click", () => {
-                applyContentWidth(DEFAULT_CONTENT_WIDTH);
-                const status = $("#admin-layout-status");
-                if (status) status.textContent = "Preview reset to 800px. Click Save to keep it.";
-            });
-
+            $("#admin-layout-reset")?.addEventListener("click", () => { applyContentWidth(DEFAULT_CONTENT_WIDTH); });
             applyContentWidth(slider.value || DEFAULT_CONTENT_WIDTH);
         }
 
+        // ================= FULL ADMIN PANEL RENDERER =================
         async function renderAdminPanel() {
             if (!isAdmin()) return;
-
+            
             applyContentWidth($("#admin-content-width")?.value || document.documentElement.style.getPropertyValue("--content-width") || DEFAULT_CONTENT_WIDTH);
 
             const postList = $("#admin-post-list");
@@ -1285,40 +711,29 @@
             userList.innerHTML = '<div style="color:var(--text-muted)">Loading...</div>';
 
             const postSnap = await new Promise((resolve, reject) => {
-                const unsub = onSnapshot(
-                    query(collection(db, "posts")),
-                    snap => { unsub(); resolve(snap); },
-                    err => { unsub(); reject(err); }
-                );
+                const unsub = onSnapshot(query(collection(db, "posts")), snap => { unsub(); resolve(snap); }, err => { unsub(); reject(err); });
             });
 
             const posts = [];
             postSnap.forEach(s => posts.push({ id: s.id, ...s.data() }));
 
-            const adminPostTime = (post) => {
-                const value = post.createdAt ?? post.timestamp ?? post.date ?? post.created_at ?? 0;
-                if (value && typeof value.toMillis === "function") return value.toMillis();
-                if (value && typeof value.seconds === "number") return value.seconds * 1000;
-                if (typeof value === "number") return value;
-                const parsed = new Date(value).getTime();
-                return Number.isFinite(parsed) ? parsed : 0;
-            };
-            posts.sort((a, b) => adminPostTime(b) - adminPostTime(a));
+            posts.sort((a, b) => {
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
+            });
 
             postList.innerHTML = posts.length ? "" : '<div style="color:var(--text-muted)">No posts found.</div>';
 
             const users = new Map();
             posts.forEach(post => {
                 if (post.uid) {
-                    if (!users.has(post.uid)) users.set(post.uid, {
-                        uid: post.uid,
-                        name: post.userName || "User",
-                        count: 0
-                    });
+                    if (!users.has(post.uid)) users.set(post.uid, { uid: post.uid, name: post.userName || "User", count: 0 });
                     users.get(post.uid).count++;
                 }
             });
 
+            // Populate Posts
             posts.slice(0, 30).forEach(post => {
                 const item = document.createElement("div");
                 item.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,.08);";
@@ -1328,13 +743,13 @@
                         <strong>${escapeHtml(post.userName || "User")}</strong>
                         <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(preview)}</div>
                     </div>
-                    <button class="btn-danger" style="flex:0 0 auto;" data-admin-delete="${escapeHtml(post.id)}">
+                    <button class="btn-danger" style="flex:0 0 auto;" onclick="deletePostAsAdmin('${escapeHtml(post.id)}')">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>`;
-                item.querySelector("[data-admin-delete]")?.addEventListener("click", () => deletePostAsAdmin(post.id));
                 postList.appendChild(item);
             });
 
+            // Populate Users
             userList.innerHTML = users.size ? "" : '<div style="color:var(--text-muted)">No users found from posts.</div>';
 
             for (const user of users.values()) {
@@ -1351,121 +766,22 @@
                         <strong>${escapeHtml(user.name)}</strong>
                         <div style="font-size:12px;color:var(--text-muted);">${user.count} post(s) • ${blocked ? "Blocked" : "Active"}</div>
                     </div>
-                    <button class="${blocked ? "btn-neon-blue" : "btn-danger"}" data-user-action="${escapeHtml(user.uid)}">
+                    <button class="${blocked ? "btn-neon-blue" : "btn-danger"}" onclick="${blocked ? `unblockUser('${escapeHtml(user.uid)}', '${escapeHtml(user.name)}')` : `blockUser('${escapeHtml(user.uid)}', '${escapeHtml(user.name)}')`}">
                         <i class="fa-solid ${blocked ? "fa-user-check" : "fa-user-lock"}"></i>
                         ${blocked ? "Unblock" : "Block"}
                     </button>`;
-                item.querySelector("[data-user-action]")?.addEventListener("click", () => {
-                    blocked ? unblockUser(user.uid, user.name) : blockUser(user.uid, user.name);
-                });
                 userList.appendChild(item);
             }
         }
-
-        async function publishAdminPost() {
-            if (!isAdmin()) return;
-            const text = $("#admin-post-text")?.value.trim() || "";
-            const link = $("#admin-post-link")?.value.trim() || "";
-            const bypass = $("#admin-bypass-toggle")?.checked === true;
-            adminBypassPost = bypass;
-
-            if (!text && !link) {
-                showStatus("Write text or add a link first.");
-                return;
-            }
-
-            if (!currentUser) {
-                showStatus("Admin bypass still needs a signed-in Firebase account for Firestore security.");
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, "posts"), {
-                    text,
-                    link: link || null,
-                    imageUrl: null,
-                    imageName: null,
-                    uid: currentUser.uid,
-                    userName: "Admin",
-                    userEmail: currentUser.email || "",
-                    userPhoto: currentUser.photoURL || "",
-                    isAdminPost: true,
-                    adminBypass: bypass,
-                    createdAt: serverTimestamp()
-                });
-                $("#admin-post-text").value = "";
-                $("#admin-post-link").value = "";
-                showStatus("Admin post published.", true);
-                renderAdminPanel();
-            } catch (e) {
-                showStatus("Admin post failed: " + e.message);
-            }
-        }
-
-        function updateAuthUi() {
-            const nav = document.querySelector("nav");
-            if (!nav) return;
-
-            let authButton = $("#auth-button");
-            if (!authButton) {
-                authButton = document.createElement("button");
-                authButton.id = "auth-button";
-                nav.appendChild(authButton);
-            }
-
-            if (currentUser) {
-                authButton.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Sign out';
-                authButton.onclick = () => signOut(auth).catch(e => showStatus(e.message));
-            } else {
-                authButton.innerHTML = '<i class="fa-brands fa-google"></i> Sign in';
-                authButton.onclick = async () => {
-                    try {
-                        await signInWithPopup(auth, provider);
-                    } catch (e) {
-                        showStatus(e.code === "auth/popup-blocked"
-                            ? "Popup blocked. Please allow popups for this site."
-                            : e.message);
-                    }
-                };
-            }
-        }
-
-        function renderAuthInfo() {
-            const profileBox = document.querySelector("#profile-view .create-post-box");
-            if (!profileBox) return;
-
-            let info = $("#firebase-user-info");
-            if (!info) {
-                info = document.createElement("div");
-                info.id = "firebase-user-info";
-                info.style.cssText = "margin-bottom:18px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;";
-                profileBox.insertBefore(info, profileBox.children[1]);
-            }
-
-            if (currentUser) {
-                info.innerHTML = `
-                    <div style="display:flex;gap:12px;align-items:center">
-                        <img src="${escapeHtml(currentUser.photoURL || "")}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;background:#222" alt="">
-                        <div>
-                            <strong>${escapeHtml(currentUser.displayName || "User")}</strong>
-                            <div style="color:var(--text-muted);font-size:12px">${escapeHtml(currentUser.email || "")}</div>
-                        </div>
-                    </div>`;
-            } else {
-                info.innerHTML = `<div style="color:var(--text-muted)">Sign in to publish posts and manage your profile.</div>`;
-            }
-        }
+        
+        $("#admin-refresh")?.addEventListener("click", renderAdminPanel);
 
 
+        // ================= EDITOR AND PUBLISHING =================
         function sanitizePostHtml(inputHtml = "") {
             const parser = new DOMParser();
             const doc = parser.parseFromString(String(inputHtml), "text/html");
-
-            const allowedTags = new Set([
-                "B","STRONG","I","EM","U","MARK","H2","H3","H4","P","BR",
-                "UL","OL","LI","A","SPAN","FONT"
-            ]);
-
+            const allowedTags = new Set(["B","STRONG","I","EM","U","MARK","H2","H3","H4","P","BR","UL","OL","LI","A","SPAN","FONT"]);
             const walk = (node) => {
                 [...node.children].forEach(child => {
                     if (!allowedTags.has(child.tagName)) {
@@ -1475,901 +791,174 @@
                         walk(node);
                         return;
                     }
-
                     [...child.attributes].forEach(attr => {
                         const name = attr.name.toLowerCase();
                         if (child.tagName === "A" && name === "href") {
-                            try {
-                                const url = new URL(attr.value, location.href);
-                                if (!["http:", "https:"].includes(url.protocol)) child.removeAttribute("href");
-                            } catch (_) {
-                                child.removeAttribute("href");
-                            }
+                            try { const url = new URL(attr.value, location.href); if (!["http:", "https:"].includes(url.protocol)) child.removeAttribute("href"); } catch (_) { child.removeAttribute("href"); }
                         } else if (child.tagName === "SPAN" && name === "style") {
                             const clean = [];
                             const style = child.style;
                             if (style.fontSize) clean.push(`font-size:${style.fontSize}`);
                             if (style.color) clean.push(`color:${style.color}`);
-                            if (clean.length) child.setAttribute("style", clean.join(";"));
-                            else child.removeAttribute("style");
+                            if (clean.length) child.setAttribute("style", clean.join(";")); else child.removeAttribute("style");
                         } else if (child.tagName === "FONT" && name === "color") {
                             const value = attr.value.trim();
-                            if (!/^#[0-9a-f]{3,8}$/i.test(value) &&
-                                !/^(rgb|rgba|hsl|hsla)\(/i.test(value)) {
-                                child.removeAttribute("color");
-                            }
-                        } else if (child.tagName === "A" && ["target","rel"].includes(name)) {
-                            child.removeAttribute(attr.name);
-                        } else {
-                            child.removeAttribute(attr.name);
-                        }
+                            if (!/^#[0-9a-f]{3,8}$/i.test(value) && !/^(rgb|rgba|hsl|hsla)\(/i.test(value)) child.removeAttribute("color");
+                        } else if (child.tagName === "A" && ["target","rel"].includes(name)) { child.removeAttribute(attr.name); } 
+                        else { child.removeAttribute(attr.name); }
                     });
-
                     if (child.tagName === "A" && child.hasAttribute("href")) {
-                        child.setAttribute("target", "_blank");
-                        child.setAttribute("rel", "noopener noreferrer");
+                        child.setAttribute("target", "_blank"); child.setAttribute("rel", "noopener noreferrer");
                     }
                     walk(child);
                 });
             };
-
             walk(doc.body);
             return doc.body.innerHTML.trim();
-        }
-
-        function getEditor() {
-            return document.querySelector("#post-editor");
-        }
-
-        function saveEditorSelection() {
-            const editor = getEditor();
-            if (!editor) return;
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount) return;
-            if (!editor.contains(sel.anchorNode) || !editor.contains(sel.focusNode)) return;
-
-            const range = sel.getRangeAt(0);
-            if (!range.collapsed) editor._savedRange = range.cloneRange();
-        }
-
-        function restoreEditorSelection() {
-            const editor = getEditor();
-            if (!editor || !editor._savedRange) return false;
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(editor._savedRange);
-            return true;
-        }
-
-        function selectedRange() {
-            const editor = getEditor();
-            if (!editor || !restoreEditorSelection()) return null;
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
-            return sel.getRangeAt(0).cloneRange();
-        }
-
-        function wrapSelected(tagName, styles = {}) {
-            const editor = getEditor();
-            const range = selectedRange();
-            if (!editor || !range) {
-                showStatus("Pehle text select karein.");
-                return false;
-            }
-
-            const el = document.createElement(tagName);
-            Object.entries(styles).forEach(([k,v]) => el.style[k] = v);
-
-            const fragment = range.extractContents();
-            el.appendChild(fragment);
-            range.insertNode(el);
-
-            const newRange = document.createRange();
-            newRange.selectNodeContents(el);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(newRange);
-            editor._savedRange = newRange.cloneRange();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-            return true;
-        }
-
-        function applyInlineFormat(cmd) {
-            const editor = getEditor();
-            if (!editor) return;
-
-            if (cmd === "bold") return wrapSelected("strong");
-            if (cmd === "italic") return wrapSelected("em");
-            if (cmd === "underline") return wrapSelected("u");
-            if (cmd === "highlight") return wrapSelected("mark", { backgroundColor: "#fff176" });
-
-            if (cmd === "insertUnorderedList" || cmd === "insertOrderedList") {
-                if (restoreEditorSelection()) {
-                    try {
-                        document.execCommand(cmd, false, null);
-                        saveEditorSelection();
-                        editor.dispatchEvent(new Event("input", { bubbles: true }));
-                        return true;
-                    } catch (_) {}
-                }
-                showStatus("Pehle list ke liye text select karein.");
-                return false;
-            }
-
-            if (cmd === "removeFormat") {
-                const range = selectedRange();
-                if (!range) {
-                    showStatus("Pehle text select karein.");
-                    return false;
-                }
-                const fragment = range.extractContents();
-                const tmp = document.createElement("div");
-                tmp.appendChild(fragment);
-                tmp.querySelectorAll("strong,b,em,i,u,mark,span,font").forEach(node => {
-                    const parent = node.parentNode;
-                    while (node.firstChild) parent.insertBefore(node.firstChild, node);
-                    node.remove();
-                });
-                while (tmp.firstChild) range.insertNode(tmp.lastChild);
-                editor.dispatchEvent(new Event("input", { bubbles: true }));
-                saveEditorSelection();
-                return true;
-            }
-            return false;
-        }
-
-        function applyHeading(tag) {
-            const editor = getEditor();
-            if (!editor || !restoreEditorSelection()) {
-                showStatus("Pehle text select karein.");
-                return;
-            }
-
-            const sel = window.getSelection();
-            if (!sel.rangeCount) return;
-            const range = sel.getRangeAt(0);
-
-            let node = sel.anchorNode;
-            if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-            const block = node?.closest?.("p,h2,h3,h4");
-            if (block && editor.contains(block) && block.contains(sel.focusNode)) {
-                const replacement = document.createElement(tag);
-                while (block.firstChild) replacement.appendChild(block.firstChild);
-                block.replaceWith(replacement);
-                const nr = document.createRange();
-                nr.selectNodeContents(replacement);
-                sel.removeAllRanges();
-                sel.addRange(nr);
-                editor._savedRange = nr.cloneRange();
-                editor.dispatchEvent(new Event("input", { bubbles: true }));
-                return;
-            }
-
-            wrapSelected(tag);
-        }
-
-        function applyFontSize(px) {
-            wrapSelected("span", { fontSize: px + "px" });
-        }
-
-        function applyFontColor(color) {
-            wrapSelected("span", { color: color });
-        }
-
-        function applyLink() {
-            const editor = getEditor();
-            const range = selectedRange();
-            if (!editor || !range) {
-                showStatus("Pehle word ya line select karein, phir Link button dabayein.");
-                return;
-            }
-
-            editor._savedRange = range.cloneRange();
-            let url = window.prompt("Link URL (https://...):", "https://");
-            if (url === null) {
-                restoreEditorSelection();
-                return;
-            }
-            url = url.trim();
-            if (!/^https?:\/\//i.test(url)) {
-                showStatus("Link http:// ya https:// se start hona chahiye.");
-                restoreEditorSelection();
-                return;
-            }
-
-            const r = selectedRange();
-            if (!r) return;
-            const a = document.createElement("a");
-            a.href = url;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            a.appendChild(r.extractContents());
-            r.insertNode(a);
-
-            const nr = document.createRange();
-            nr.selectNodeContents(a);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(nr);
-            editor._savedRange = nr.cloneRange();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-
-        function removeSelectedLink() {
-            const editor = getEditor();
-            const range = selectedRange();
-            if (!editor || !range) {
-                showStatus("Pehle linked text select karein.");
-                return;
-            }
-            editor.querySelectorAll("a").forEach(a => {
-                try {
-                    if (range.intersectsNode(a)) {
-                        const parent = a.parentNode;
-                        while (a.firstChild) parent.insertBefore(a.firstChild, a);
-                        a.remove();
-                    }
-                } catch (_) {}
-            });
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-            saveEditorSelection();
-        }
-
-        function clearSelectedFormat() {
-            const editor = getEditor();
-            const range = selectedRange();
-            if (!editor || !range) {
-                showStatus("Pehle text select karein.");
-                return;
-            }
-            const frag = range.extractContents();
-            const holder = document.createElement("div");
-            holder.appendChild(frag);
-
-            holder.querySelectorAll("strong,b,em,i,u,mark,span,font").forEach(node => {
-                const parent = node.parentNode;
-                while (node.firstChild) parent.insertBefore(node.firstChild, node);
-                node.remove();
-            });
-
-            while (holder.firstChild) range.insertNode(holder.firstChild);
-
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            editor._savedRange = range.cloneRange();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-
-
-        function cleanPastedEditorBackgrounds() {
-            const editor = getEditor();
-            if (!editor) return;
-
-            editor.querySelectorAll("[style]").forEach(el => {
-                el.style.removeProperty("background");
-                el.style.removeProperty("background-color");
-                el.style.removeProperty("color");
-                el.style.removeProperty("font-size");
-                el.style.removeProperty("font-family");
-                if (!el.getAttribute("style")?.trim()) el.removeAttribute("style");
-            });
-
-            editor.querySelectorAll("font").forEach(el => {
-                el.removeAttribute("color");
-                el.removeAttribute("face");
-                el.removeAttribute("size");
-            });
-        }
-
-        function sanitizePastedHtmlForFrindFlow(rawHtml) {
-            const holder = document.createElement("div");
-            holder.innerHTML = rawHtml || "";
-
-            holder.querySelectorAll("script, style, meta, link, iframe, object").forEach(el => el.remove());
-
-            holder.querySelectorAll("*").forEach(el => {
-                el.removeAttribute("bgcolor");
-                el.removeAttribute("color");
-                el.removeAttribute("face");
-                el.removeAttribute("size");
-
-                const style = el.getAttribute("style");
-                if (style) {
-                    const kept = style.split(";").map(x => x.trim()).filter(Boolean).filter(rule => {
-                        const prop = rule.split(":")[0]?.trim().toLowerCase();
-                        return !["color","background","background-color","font-size","font-family","mso-fareast-font-family"].includes(prop);
-                    });
-                    if (kept.length) el.setAttribute("style", kept.join(";"));
-                    else el.removeAttribute("style");
-                }
-            });
-
-            return holder.innerHTML;
-        }
-
-        function handleEditorPaste(e) {
-            const editor = getEditor();
-            if (!editor) return;
-
-            e.preventDefault();
-            saveEditorSelection();
-            restoreEditorSelection();
-
-            const clipboard = e.clipboardData;
-            const htmlData = clipboard?.getData("text/html") || "";
-            const textData = clipboard?.getData("text/plain") || "";
-
-            let safeHtml = htmlData ? sanitizePastedHtmlForFrindFlow(htmlData) : "";
-            if (!safeHtml) {
-                safeHtml = escapeHtml(textData).replace(/\r?\n/g, "<br>");
-            }
-
-            document.execCommand("insertHTML", false, safeHtml);
-            cleanPastedEditorBackgrounds();
-            saveEditorSelection();
-            editor.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-
-        function setupRichEditor() {
-            const editor = getEditor();
-            if (!editor) return;
-
-            const toolbar = document.querySelector("#post-toolbar");
-            if (!toolbar) return;
-
-            toolbar.querySelectorAll("button,select,input").forEach(control => {
-                control.addEventListener("mousedown", () => saveEditorSelection());
-            });
-
-            toolbar.querySelectorAll("[data-cmd]").forEach(btn => {
-                btn.addEventListener("click", e => {
-                    e.preventDefault();
-                    applyInlineFormat(btn.dataset.cmd);
-                });
-            });
-
-            function closeRichMenus() {
-                document.querySelectorAll(".rich-popup-menu.open").forEach(menu => {
-                    menu.classList.remove("open");
-                    const btn = menu.parentElement?.querySelector(".rich-menu-btn");
-                    btn?.setAttribute("aria-expanded", "false");
-                });
-            }
-
-            function toggleRichMenu(menuId, buttonId) {
-                const menu = document.getElementById(menuId);
-                const button = document.getElementById(buttonId);
-                if (!menu || !button) return;
-                const willOpen = !menu.classList.contains("open");
-                closeRichMenus();
-                if (willOpen) {
-                    menu.classList.add("open");
-                    button.setAttribute("aria-expanded", "true");
-                    restoreEditorSelection();
-                }
-            }
-
-            document.querySelector("#post-font-size-btn")?.addEventListener("mousedown", () => saveEditorSelection());
-            document.querySelector("#post-font-size-btn")?.addEventListener("click", e => {
-                e.preventDefault();
-                toggleRichMenu("post-font-size-menu", "post-font-size-btn");
-            });
-
-            document.querySelectorAll("#post-font-size-menu [data-size]").forEach(btn => {
-                btn.addEventListener("mousedown", () => saveEditorSelection());
-                btn.addEventListener("click", e => {
-                    e.preventDefault();
-                    const value = parseInt(btn.dataset.size, 10);
-                    if (Number.isFinite(value)) applyFontSize(value);
-                    closeRichMenus();
-                });
-            });
-
-            document.querySelector("#post-heading-btn")?.addEventListener("mousedown", () => saveEditorSelection());
-            document.querySelector("#post-heading-btn")?.addEventListener("click", e => {
-                e.preventDefault();
-                toggleRichMenu("post-heading-menu", "post-heading-btn");
-            });
-
-            document.querySelectorAll("#post-heading-menu [data-heading]").forEach(btn => {
-                btn.addEventListener("mousedown", () => saveEditorSelection());
-                btn.addEventListener("click", e => {
-                    e.preventDefault();
-                    const value = btn.dataset.heading;
-                    if (value) applyHeading(value);
-                    closeRichMenus();
-                });
-            });
-
-            document.addEventListener("click", e => {
-                if (!e.target.closest(".rich-menu-wrap")) closeRichMenus();
-            });
-
-            const color = document.querySelector("#post-font-color");
-            color?.addEventListener("input", e => {
-                applyFontColor(e.target.value);
-            });
-
-            document.querySelector("#post-link-btn")?.addEventListener("click", e => {
-                e.preventDefault();
-                applyLink();
-            });
-
-            document.querySelector("#post-unlink-btn")?.addEventListener("click", e => {
-                e.preventDefault();
-                removeSelectedLink();
-            });
-
-            document.querySelector("#post-clear-format")?.addEventListener("click", e => {
-                e.preventDefault();
-                clearSelectedFormat();
-            });
-
-            editor.addEventListener("mouseup", saveEditorSelection);
-            editor.addEventListener("keyup", saveEditorSelection);
-            editor.addEventListener("input", saveEditorSelection);
-            editor.addEventListener("paste", handleEditorPaste);
-
-            document.addEventListener("selectionchange", () => {
-                const sel = window.getSelection();
-                if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-                if (editor.contains(sel.anchorNode) && editor.contains(sel.focusNode)) {
-                    editor._savedRange = sel.getRangeAt(0).cloneRange();
-                }
-            });
         }
 
         function addLoginGuard() {
             const postButton = document.querySelector(".create-post-box .btn-neon-blue");
             if (!postButton) return;
-            postButton.onclick = publishPost;
+            postButton.onclick = async () => {
+                if (!currentUser && !isAdmin()) { showStatus("Please sign in first."); return; }
+                const box = document.querySelector(".create-post-box");
+                const editor = box?.querySelector("#post-editor");
+                const linkInput = box?.querySelector("#post-link-input");
+                const htmlValue = sanitizePostHtml(editor?.innerHTML || "");
+                const textValue = (editor?.textContent || "").trim();
+                const linkValue = linkInput?.value.trim() || "";
+                if (!textValue && !linkValue && !selectedImageUrl) { showStatus("Add some text, an image, or a link first."); return; }
+                try {
+                    await addDoc(collection(db, "posts"), {
+                        text: textValue, textHtml: htmlValue || null, link: linkValue || null,
+                        imageUrl: selectedImageUrl || null, imageName: selectedImageName || null,
+                        uid: currentUser?.uid || "admin-bypass", userName: isAdmin() ? "Admin" : (currentUser.displayName || "User"),
+                        userEmail: currentUser?.email || "", userPhoto: currentUser?.photoURL || "",
+                        isAdminPost: isAdmin(), adminBypass: isAdmin() && adminBypassPost, createdAt: serverTimestamp()
+                    });
+                    if (editor) editor.innerHTML = "";
+                    linkInput.value = "";
+                    selectedImageUrl = "";
+                    $("#image-preview-wrap").style.display = "none";
+                    $("#image-upload-status").textContent = "";
+                    showStatus("Post published.", true);
+                } catch (e) { showStatus("Could not publish: " + e.message); }
+            };
 
-            const editor = document.querySelector('#post-editor');
             const fileInput = document.querySelector('#post-image-input');
-            const previewWrap = document.querySelector('#image-preview-wrap');
-            const preview = document.querySelector('#image-preview');
-            const removePreview = document.querySelector('#remove-image-preview');
-            const uploadStatus = document.querySelector('#image-upload-status');
-
             if (fileInput) {
                 fileInput.addEventListener("change", async (event) => {
                     const file = event.target.files?.[0];
                     if (!file) return;
-
-                    if (!currentUser && !isAdmin()) {
-                        event.target.value = "";
-                        showStatus("Please sign in before uploading an image.");
-                        return;
-                    }
-
-                    // File Size Limit Check (10MB)
-                    const maxSizeMB = 10;
-                    if (file.size > maxSizeMB * 1024 * 1024) {
-                        showStatus(`File is too large (${(file.size / (1024*1024)).toFixed(1)} MB). Please upload a file smaller than ${maxSizeMB} MB.`);
-                        event.target.value = "";
-                        return;
-                    }
-
+                    if (!currentUser && !isAdmin()) { event.target.value = ""; showStatus("Please sign in before uploading an image."); return; }
+                    if (file.size > 10 * 1024 * 1024) { showStatus("File is too large. Max size is 10MB."); event.target.value = ""; return; }
+                    
                     const localUrl = URL.createObjectURL(file);
-                    preview.src = localUrl;
-                    previewWrap.style.display = "block";
-                    uploadStatus.textContent = "Uploading...";
-
+                    $("#image-preview").src = localUrl;
+                    $("#image-preview-wrap").style.display = "block";
+                    $("#image-upload-status").textContent = "Uploading...";
                     try {
                         selectedImageUrl = await uploadToCloudinary(file);
                         selectedImageName = file.name;
-                        uploadStatus.textContent = "Image ready";
+                        $("#image-upload-status").textContent = "Image ready";
                         showStatus("Image uploaded successfully.", true);
                     } catch (e) {
-                        selectedImageUrl = "";
-                        selectedImageName = "";
-                        previewWrap.style.display = "none";
-                        uploadStatus.textContent = "";
-                        event.target.value = "";
+                        $("#image-upload-status").textContent = "";
                         showStatus(e.message);
                     }
                 });
             }
-
-            removePreview?.addEventListener("click", () => {
-                selectedImageUrl = "";
-                selectedImageName = "";
-                if (fileInput) fileInput.value = "";
-                if (preview) preview.removeAttribute("src");
-                if (previewWrap) previewWrap.style.display = "none";
-                if (uploadStatus) uploadStatus.textContent = "";
-            });
         }
 
-        async function publishPost() {
-            if (!currentUser && !isAdmin()) {
-                showStatus("Please sign in first.");
-                return;
-            }
+        $("#admin-publish")?.addEventListener("click", async () => {
+            if (!isAdmin()) return;
+            const text = $("#admin-post-text")?.value.trim() || "";
+            const link = $("#admin-post-link")?.value.trim() || "";
+            const bypass = $("#admin-bypass-toggle")?.checked === true;
+            adminBypassPost = bypass;
 
-            if (currentUser && !adminBypassPost && await isBlocked(currentUser.uid)) {
-                showStatus("Your account is blocked by admin.");
-                return;
-            }
-
-            const box = document.querySelector(".create-post-box");
-            const editor = box?.querySelector("#post-editor");
-            const linkInput = box?.querySelector("#post-link-input");
-            const htmlValue = sanitizePostHtml(editor?.innerHTML || "");
-            const textValue = (editor?.textContent || "").trim();
-            const linkValue = linkInput?.value.trim() || "";
-
-            if (!textValue && !linkValue && !selectedImageUrl) {
-                showStatus("Add some text, an image, or a link first.");
-                return;
-            }
+            if (!text && !link) { showStatus("Write text or add a link first."); return; }
+            if (!currentUser) { showStatus("Admin bypass still needs a signed-in Firebase account for Firestore security."); return; }
 
             try {
-                const post = {
-                    text: textValue,
-                    textHtml: htmlValue || null,
-                    link: linkValue || null,
-                    imageUrl: selectedImageUrl || null,
-                    imageName: selectedImageName || null,
-                    uid: currentUser?.uid || "admin-bypass",
-                    userName: isAdmin() ? "Admin" : (currentUser.displayName || "User"),
-                    userEmail: currentUser?.email || "",
-                    userPhoto: currentUser?.photoURL || "",
-                    isAdminPost: isAdmin(),
-                    adminBypass: isAdmin() && adminBypassPost,
-                    createdAt: serverTimestamp()
-                };
-
-                await addDoc(collection(db, "posts"), post);
-
-                if (editor) editor.innerHTML = "";
-                linkInput.value = "";
-                const fileInput = box.querySelector('input[type="file"]');
-                if (fileInput) fileInput.value = "";
-                selectedImageUrl = "";
-                selectedImageName = "";
-                const previewWrap = document.querySelector("#image-preview-wrap");
-                const preview = document.querySelector("#image-preview");
-                const uploadStatus = document.querySelector("#image-upload-status");
-                if (preview) preview.removeAttribute("src");
-                if (previewWrap) previewWrap.style.display = "none";
-                if (uploadStatus) uploadStatus.textContent = "";
-                showStatus("Post published.", true);
-            } catch (e) {
-                showStatus("Could not publish: " + e.message);
-            }
-        }
-
-        function formatDate(ts) {
-            if (!ts?.toDate) return "Just now";
-            return ts.toDate().toLocaleString();
-        }
-
-
-        function getPostActionCount(post, field) {
-            const value = post?.[field];
-            return Number.isFinite(Number(value)) ? Number(value) : 0;
-        }
-
-        function favoriteStorageKey(postId) {
-            return `frindflow_favorite_${postId}`;
-        }
-
-        function buildPostActions(post) {
-            const postId = String(post.id || post.postId || "");
-            const liked = localStorage.getItem(`frindflow_liked_${postId}`) === "1";
-            const favorited = localStorage.getItem(favoriteStorageKey(postId)) === "1";
-
-            return `
-                <div class="post-actions" data-post-action-id="${escapeHtml(postId)}">
-                    <button type="button" class="post-action-btn ${liked ? "active" : ""}" data-post-action="like" title="Like">
-                        <i class="fa-regular fa-thumbs-up"></i>
-                        <span class="action-label">Like</span>
-                        <span class="count">${getPostActionCount(post, "likes")}</span>
-                    </button>
-                    <button type="button" class="post-action-btn" data-post-action="comment" title="Comment">
-                        <i class="fa-regular fa-comment"></i>
-                        <span class="action-label">Comment</span>
-                        <span class="count">${getPostActionCount(post, "comments")}</span>
-                    </button>
-                    <button type="button" class="post-action-btn" data-post-action="share" title="Share">
-                        <i class="fa-solid fa-share-nodes"></i>
-                        <span class="action-label">Share</span>
-                        <span class="count">${getPostActionCount(post, "shares")}</span>
-                    </button>
-                    <button type="button" class="post-action-btn ${favorited ? "favorited" : ""}" data-post-action="favorite" title="Favorite">
-                        <i class="${favorited ? "fa-solid" : "fa-regular"} fa-star"></i>
-                        <span class="action-label">Favorite</span>
-                    </button>
-                </div>
-            `;
-        }
-
-        async function changePostCounter(postId, field, amount = 1) {
-            if (!postId) return false;
-            try {
-                await updateDoc(doc(db, "posts", postId), {
-                    [field]: getPostActionCount(window.__frindflowPostCache?.[postId] || {}, field) + amount
+                await addDoc(collection(db, "posts"), {
+                    text, link: link || null, imageUrl: null, imageName: null,
+                    uid: currentUser.uid, userName: "Admin", userEmail: currentUser.email || "",
+                    userPhoto: currentUser.photoURL || "", isAdminPost: true, adminBypass: bypass, createdAt: serverTimestamp()
                 });
-                return true;
-            } catch (error) {
-                console.warn(`Could not update ${field}:`, error);
-                return false;
+                $("#admin-post-text").value = "";
+                $("#admin-post-link").value = "";
+                showStatus("Admin post published.", true);
+                renderAdminPanel();
+            } catch (e) { showStatus("Admin post failed: " + e.message); }
+        });
+
+
+        function updateAuthUi() {
+            let authButton = $("#auth-button");
+            if (!authButton) { authButton = document.createElement("button"); authButton.id = "auth-button"; document.querySelector("nav")?.appendChild(authButton); }
+            if (currentUser) {
+                authButton.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Sign out';
+                authButton.onclick = () => signOut(auth);
+            } else {
+                authButton.innerHTML = '<i class="fa-brands fa-google"></i> Sign in';
+                authButton.onclick = () => signInWithPopup(auth, provider).catch(e => showStatus(e.message));
             }
-        }
-
-        function bindPostActions(container) {
-            container.querySelectorAll(".post-actions").forEach(bar => {
-                if (bar.dataset.bound === "1") return;
-                bar.dataset.bound = "1";
-
-                const postId = bar.dataset.postActionId;
-                const post = window.__frindflowPostCache?.[postId] || {};
-
-                bar.querySelectorAll("[data-post-action]").forEach(button => {
-                    button.addEventListener("click", async () => {
-                        const action = button.dataset.postAction;
-                        const countEl = button.querySelector(".count");
-
-                        if (action === "favorite") {
-                            const key = favoriteStorageKey(postId);
-                            const active = localStorage.getItem(key) === "1";
-                            localStorage.setItem(key, active ? "0" : "1");
-                            button.classList.toggle("favorited", !active);
-                            const icon = button.querySelector("i");
-                            if (icon) icon.className = `${!active ? "fa-solid" : "fa-regular"} fa-star`;
-                            return;
-                        }
-
-                        if (action === "like") {
-                            const key = `frindflow_liked_${postId}`;
-                            const alreadyLiked = localStorage.getItem(key) === "1";
-                            if (alreadyLiked) return;
-
-                            localStorage.setItem(key, "1");
-                            button.classList.add("active");
-                            const icon = button.querySelector("i");
-                            if (icon) icon.className = "fa-solid fa-thumbs-up";
-
-                            const old = Number(countEl?.textContent || 0);
-                            if (countEl) countEl.textContent = String(old + 1);
-
-                            const saved = await changePostCounter(postId, "likes", 1);
-                            if (saved && window.__frindflowPostCache?.[postId]) {
-                                window.__frindflowPostCache[postId].likes = old + 1;
-                            }
-                            return;
-                        }
-
-                        if (action === "share") {
-                            const shareUrl = `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`;
-                            const card = bar.closest(".post-card");
-
-                            let shareBox = card?.querySelector(".post-share-box");
-                            if (!shareBox) {
-                                shareBox = document.createElement("div");
-                                shareBox.className = "post-share-box";
-                                shareBox.innerHTML = `
-                                    <a class="post-share-url" target="_blank" rel="noopener noreferrer"></a>
-                                    <button type="button" class="post-share-copy">Copy</button>
-                                    <a class="post-share-open" target="_blank" rel="noopener noreferrer">Open</a>
-                                `;
-                                bar.insertAdjacentElement("afterend", shareBox);
-
-                                const urlEl = shareBox.querySelector(".post-share-url");
-                                const openEl = shareBox.querySelector(".post-share-open");
-                                const copyEl = shareBox.querySelector(".post-share-copy");
-                                if (urlEl) {
-                                    urlEl.href = shareUrl;
-                                    urlEl.textContent = shareUrl;
-                                }
-                                if (openEl) openEl.href = shareUrl;
-
-                                copyEl?.addEventListener("click", async () => {
-                                    try {
-                                        await navigator.clipboard.writeText(shareUrl);
-                                        copyEl.textContent = "Copied";
-                                        setTimeout(() => { copyEl.textContent = "Copy"; }, 1200);
-                                    } catch (_) {
-                                        window.prompt("Copy this post link:", shareUrl);
-                                    }
-                                });
-                            }
-
-                            const willShow = !shareBox.classList.contains("show");
-                            shareBox.classList.toggle("show", willShow);
-
-                            if (willShow) {
-                                const alreadyCounted = button.dataset.shared === "1";
-                                if (!alreadyCounted) {
-                                    button.dataset.shared = "1";
-                                    const old = Number(countEl?.textContent || 0);
-                                    if (countEl) countEl.textContent = String(old + 1);
-                                    await changePostCounter(postId, "shares", 1);
-                                }
-                            }
-                            return;
-                        }
-
-                        if (action === "comment") {
-                            const card = bar.closest(".post-card");
-                            const existing = card?.querySelector(".post-comment-box");
-                            if (existing) {
-                                existing.scrollIntoView({ behavior: "smooth", block: "center" });
-                                existing.querySelector("input, textarea")?.focus();
-                                return;
-                            }
-
-                            const box = document.createElement("div");
-                            box.className = "post-comment-box";
-                            box.style.cssText = "margin-top:10px;display:flex;gap:8px;";
-                            box.innerHTML = `
-                                <input type="text" placeholder="Write a comment..." style="flex:1;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:#fff;">
-                                <button type="button" class="btn-neon-blue" style="padding:8px 12px;">Send</button>
-                            `;
-                            card?.appendChild(box);
-
-                            const input = box.querySelector("input");
-                            const send = box.querySelector("button");
-                            send.addEventListener("click", async () => {
-                                const text = input.value.trim();
-                                if (!text) return;
-                                try {
-                                    const current = getPostActionCount(window.__frindflowPostCache?.[postId] || {}, "comments");
-                                    await updateDoc(doc(db, "posts", postId), { comments: current + 1 });
-                                    input.value = "";
-                                    if (countEl) countEl.textContent = String(current + 1);
-                                    showStatus("Comment count updated.", true);
-                                } catch (error) {
-                                    showStatus("Comment could not be saved: " + error.message);
-                                }
-                            });
-                            input.focus();
-                        }
-                    });
-                });
-            });
         }
 
         function renderPosts(snapshot) {
             const feed = document.querySelector("#feed-view");
             if (!feed) return;
-
-            const createBox = feed.querySelector(".create-post-box");
-
             [...feed.querySelectorAll(".dynamic-post")].forEach(el => el.remove());
-
             const posts = [];
             snapshot.forEach(s => posts.push({ id: s.id, ...s.data() }));
-
-            const postTime = (post) => {
-                const value = post.createdAt ?? post.timestamp ?? post.date ?? post.created_at ?? 0;
-                if (value && typeof value.toMillis === "function") return value.toMillis();
-                if (value && typeof value.seconds === "number") return value.seconds * 1000;
-                if (typeof value === "number") return value;
-                const parsed = new Date(value).getTime();
-                return Number.isFinite(parsed) ? parsed : 0;
-            };
-            posts.sort((a, b) => postTime(b) - postTime(a));
-
-            window.__frindflowPostCache = {};
-            posts.forEach(post => {
-                window.__frindflowPostCache[String(post.id)] = post;
+            posts.sort((a, b) => {
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
             });
 
             const fragment = document.createDocumentFragment();
-
             posts.forEach(post => {
                 const card = document.createElement("div");
                 card.className = "glass-panel post-card dynamic-post";
-                card.id = `post-${String(post.id)}`;
-                card.dataset.postId = String(post.id);
-
-                const image = post.imageUrl
-                    ? `<div class="post-image-wrap"><img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image" onerror="this.style.display='none'; this.nextElementSibling?.classList.add('image-load-error');"></div>
-                       <div class="image-load-error" style="display:none;color:var(--text-muted);font-size:12px;margin-top:8px;">Image could not be loaded.</div>`
-                    : "";
-
-                const link = post.link
-                    ? `<div class="post-link" style="margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                         <a href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                           <i class="fa-solid fa-link"></i> ${escapeHtml(post.link)}
-                         </a>
-                         <a href="${escapeHtml(post.link)}" target="_blank" rel="noopener noreferrer" class="btn-neon-blue" style="flex:0 0 auto;text-decoration:none;padding:8px 12px;">Open Website</a>
-                       </div>`
-                    : "";
+                card.id = `post-${post.id}`;
+                const image = post.imageUrl ? `<div class="post-image-wrap"><img src="${escapeHtml(post.imageUrl)}" alt="Post Image" class="post-image"></div>` : "";
+                const link = post.link ? `<div class="post-link" style="margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;"><a href="${escapeHtml(post.link)}" target="_blank"><i class="fa-solid fa-link"></i> ${escapeHtml(post.link)}</a></div>` : "";
                 card.innerHTML = `
                     <div class="post-header">
-                        <span class="post-user">
-                            <i class="fa-solid fa-circle-user"></i> ${escapeHtml(post.userName || "User")}
-                        </span>
-                        <span style="font-size:12px;color:var(--text-muted)">${escapeHtml(formatDate(post.createdAt))}</span>
+                        <span class="post-user"><i class="fa-solid fa-circle-user"></i> ${escapeHtml(post.userName || "User")}</span>
                     </div>
-                    ${post.textHtml
-                        ? `<div class="post-content">${sanitizePostHtml(post.textHtml)}</div>`
-                        : (post.text ? `<div class="post-content">${escapeHtml(post.text).replace(/\n/g, "<br>")}</div>` : "")}
-                    ${image}
-                    ${link}
-                    ${buildPostActions(post)}`;
-
-                card.querySelector("[data-delete]")?.addEventListener("click", async () => {
-                    try {
-                        await deleteDoc(doc(db, "posts", post.id));
-                        showStatus("Post deleted.", true);
-                    } catch (e) {
-                        showStatus("Delete failed: " + e.message);
-                    }
-                });
-
+                    ${post.textHtml ? `<div class="post-content">${sanitizePostHtml(post.textHtml)}</div>` : (post.text ? `<div class="post-content">${escapeHtml(post.text)}</div>` : "")}
+                    ${image}${link}
+                `;
                 fragment.appendChild(card);
             });
-
-            createBox.after(fragment);
-            bindPostActions(feed);
-            focusSharedPost();
+            feed.querySelector(".create-post-box").after(fragment);
         }
-
-        function focusSharedPost() {
-            const hash = window.location.hash || "";
-            if (!hash.startsWith("#post-")) return;
-
-            const postId = decodeURIComponent(hash.slice("#post-".length));
-            if (!postId) return;
-
-            const card = document.getElementById(`post-${postId}`);
-            if (!card) return;
-
-            document.querySelectorAll(".post-card.shared-target").forEach(el => {
-                el.classList.remove("shared-target");
-            });
-            card.classList.add("shared-target");
-
-            setTimeout(() => {
-                card.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 80);
-        }
-
-        window.addEventListener("hashchange", focusSharedPost);
-        window.addEventListener("load", () => setTimeout(focusSharedPost, 300));
 
         function listenToPosts() {
-            const postsQuery = query(collection(db, "posts"));
-            onSnapshot(postsQuery, renderPosts, error => {
-                console.error(error);
-                showStatus("Posts could not be loaded. Check Firestore rules/index.");
-            });
+            onSnapshot(query(collection(db, "posts")), renderPosts, error => showStatus("Posts could not be loaded."));
         }
 
         window.switchView = function(viewId) {
             document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-
-            const section = document.getElementById(viewId);
-            if (section) section.classList.add('active');
-
-            const map = {
-                "feed-view": "nav-feed",
-                "profile-view": "nav-profile",
-                "admin-view": "nav-admin"
-            };
+            document.getElementById(viewId)?.classList.add('active');
+            const map = {"feed-view": "nav-feed", "profile-view": "nav-profile", "admin-view": "nav-admin"};
             if (map[viewId]) document.getElementById(map[viewId])?.classList.add("active");
             if (viewId === "admin-view" && isAdmin()) renderAdminPanel();
         };
 
-        onAuthStateChanged(auth, user => {
-            currentUser = user;
-            updateAuthUi();
-            renderAuthInfo();
-        });
+        onAuthStateChanged(auth, user => { currentUser = user; updateAuthUi(); });
 
         addLoginGuard();
-        setupRichEditor();
         setupAdminLogoUnlock();
         setupAdminLayoutSettings();
         loadContentWidthSetting();
-
-        $("#admin-refresh")?.addEventListener("click", renderAdminPanel);
+        listenToPosts();
+        
         $("#admin-exit")?.addEventListener("click", () => {
             adminMode = false;
             adminBypassPost = false;
@@ -2378,175 +967,103 @@
             switchView("feed-view");
             showStatus("Admin mode closed.", true);
         });
-        $("#admin-bypass-toggle")?.addEventListener("change", e => {
-            adminBypassPost = e.target.checked;
-        });
-        $("#admin-publish")?.addEventListener("click", publishAdminPost);
 
-        listenToPosts();
-        
-        // ================= SIDE ADS JAVASCRIPT LOGIC =================
-        let adminLeftAdUrl = "";
-        let adminRightAdUrl = "";
+        // ================= MULTI-ADS MANAGER LOGIC =================
+        let adsData = { leftTopAdUrl: "", leftBottomAdUrl: "", rightTopAdUrl: "", rightBottomAdUrl: "" };
 
-        // Admin: Upload Left Ad Image
-        $("#admin-left-ad-file")?.addEventListener("change", async (e) => {
-            const file = e.target.files?.[0];
-            if(!file) return;
-            $("#admin-left-ad-status").textContent = "Uploading...";
-            try {
-                adminLeftAdUrl = await uploadToCloudinary(file);
-                $("#admin-left-ad-status").textContent = "Uploaded!";
-                $("#admin-left-ad-preview").src = adminLeftAdUrl;
-                $("#admin-left-ad-preview").style.display = "block";
-            } catch (err) {
-                $("#admin-left-ad-status").textContent = "Error";
-                showStatus(err.message);
-            }
-        });
+        function setupAdUploader(inputId, previewId, statusId, removeId, dataKey) {
+            $(inputId)?.addEventListener("change", async (e) => {
+                const file = e.target.files?.[0];
+                if(!file) return;
+                $(statusId).textContent = "Uploading...";
+                try {
+                    adsData[dataKey] = await uploadToCloudinary(file);
+                    $(statusId).textContent = "Uploaded!";
+                    $(previewId).src = adsData[dataKey];
+                    $(previewId).style.display = "block";
+                    $(removeId).style.display = "inline-block";
+                } catch (err) {
+                    $(statusId).textContent = "Error";
+                    showStatus(err.message);
+                }
+            });
+            
+            $(removeId)?.addEventListener("click", () => {
+                adsData[dataKey] = "";
+                $(previewId).src = "";
+                $(previewId).style.display = "none";
+                $(removeId).style.display = "none";
+                $(statusId).textContent = "Removed";
+                $(inputId).value = "";
+            });
+        }
 
-        // Admin: Upload Right Ad Image
-        $("#admin-right-ad-file")?.addEventListener("change", async (e) => {
-            const file = e.target.files?.[0];
-            if(!file) return;
-            $("#admin-right-ad-status").textContent = "Uploading...";
-            try {
-                adminRightAdUrl = await uploadToCloudinary(file);
-                $("#admin-right-ad-status").textContent = "Uploaded!";
-                $("#admin-right-ad-preview").src = adminRightAdUrl;
-                $("#admin-right-ad-preview").style.display = "block";
-            } catch (err) {
-                $("#admin-right-ad-status").textContent = "Error";
-                showStatus(err.message);
-            }
-        });
+        setupAdUploader("#admin-left-top-file", "#admin-left-top-preview", "#admin-left-top-status", "#admin-left-top-remove", "leftTopAdUrl");
+        setupAdUploader("#admin-left-bottom-file", "#admin-left-bottom-preview", "#admin-left-bottom-status", "#admin-left-bottom-remove", "leftBottomAdUrl");
+        setupAdUploader("#admin-right-top-file", "#admin-right-top-preview", "#admin-right-top-status", "#admin-right-top-remove", "rightTopAdUrl");
+        setupAdUploader("#admin-right-bottom-file", "#admin-right-bottom-preview", "#admin-right-bottom-status", "#admin-right-bottom-remove", "rightBottomAdUrl");
 
-        // Admin: Save Ads to Firebase
         $("#admin-save-ads-btn")?.addEventListener("click", async () => {
             if (!isAdmin()) return;
-            const leftLink = $("#admin-left-ad-link").value.trim();
-            const rightLink = $("#admin-right-ad-link").value.trim();
-            
             try {
-                await setDoc(doc(db, "siteSettings", "sideAds"), {
-                    leftAdUrl: adminLeftAdUrl,
-                    leftLink: leftLink,
-                    rightAdUrl: adminRightAdUrl,
-                    rightLink: rightLink,
+                await setDoc(doc(db, "siteSettings", "sideAdsMulti"), {
+                    leftTopAdUrl: adsData.leftTopAdUrl,
+                    leftTopLink: $("#admin-left-top-link").value.trim(),
+                    leftBottomAdUrl: adsData.leftBottomAdUrl,
+                    leftBottomLink: $("#admin-left-bottom-link").value.trim(),
+                    rightTopAdUrl: adsData.rightTopAdUrl,
+                    rightTopLink: $("#admin-right-top-link").value.trim(),
+                    rightBottomAdUrl: adsData.rightBottomAdUrl,
+                    rightBottomLink: $("#admin-right-bottom-link").value.trim(),
                     updatedAt: serverTimestamp()
                 }, { merge: true });
-                showStatus("Ads successfully saved and published!", true);
+                showStatus("All Ads successfully saved and published!", true);
                 fetchAndDisplayAds(); 
-            } catch (error) {
-                showStatus("Failed to save ads: " + error.message);
-            }
+            } catch (error) { showStatus("Failed to save ads: " + error.message); }
         });
 
-        // Client: Fetch and Display Ads
+        function populateAdSlot(clientId, imgId, previewId, linkInputId, removeBtnId, url, link, sideContainerId) {
+            if (url) {
+                $(imgId).src = url;
+                $(imgId).style.display = "block";
+                $(clientId).href = link || "#";
+                $(clientId).style.display = "flex";
+                $(sideContainerId).classList.add("active-ad");
+                
+                // Admin Side Sync
+                $(previewId).src = url;
+                $(previewId).style.display = "block";
+                $(removeBtnId).style.display = "inline-block";
+                if($(linkInputId)) $(linkInputId).value = link || "";
+            } else {
+                $(clientId).style.display = "none";
+                $(imgId).style.display = "none";
+            }
+        }
+
         async function fetchAndDisplayAds() {
             try {
-                const snap = await getDoc(doc(db, "siteSettings", "sideAds"));
+                const snap = await getDoc(doc(db, "siteSettings", "sideAdsMulti"));
                 if (snap.exists()) {
                     const data = snap.data();
-                    
-                    // Display Left Ad
-                    if (data.leftAdUrl) {
-                        $("#client-left-ad-img").src = data.leftAdUrl;
-                        $("#client-left-ad-img").style.display = "block";
-                        $("#client-left-ad").href = data.leftLink || "#";
-                        $("#client-left-ad").classList.add("active-ad");
-                        
-                        adminLeftAdUrl = data.leftAdUrl;
-                        $("#admin-left-ad-preview").src = data.leftAdUrl;
-                        $("#admin-left-ad-preview").style.display = "block";
-                        if($("#admin-left-ad-link")) $("#admin-left-ad-link").value = data.leftLink || "";
-                    } else {
-                        $("#client-left-ad").classList.remove("active-ad");
-                    }
+                    adsData.leftTopAdUrl = data.leftTopAdUrl || "";
+                    adsData.leftBottomAdUrl = data.leftBottomAdUrl || "";
+                    adsData.rightTopAdUrl = data.rightTopAdUrl || "";
+                    adsData.rightBottomAdUrl = data.rightBottomAdUrl || "";
 
-                    // Display Right Ad
-                    if (data.rightAdUrl) {
-                        $("#client-right-ad-img").src = data.rightAdUrl;
-                        $("#client-right-ad-img").style.display = "block";
-                        $("#client-right-ad").href = data.rightLink || "#";
-                        $("#client-right-ad").classList.add("active-ad");
-                        
-                        adminRightAdUrl = data.rightAdUrl;
-                        $("#admin-right-ad-preview").src = data.rightAdUrl;
-                        $("#admin-right-ad-preview").style.display = "block";
-                        if($("#admin-right-ad-link")) $("#admin-right-ad-link").value = data.rightLink || "";
-                    } else {
-                        $("#client-right-ad").classList.remove("active-ad");
-                    }
+                    $("#client-left-container").classList.remove("active-ad");
+                    $("#client-right-container").classList.remove("active-ad");
+
+                    populateAdSlot("#client-left-top", "#client-left-top-img", "#admin-left-top-preview", "#admin-left-top-link", "#admin-left-top-remove", data.leftTopAdUrl, data.leftTopLink, "#client-left-container");
+                    populateAdSlot("#client-left-bottom", "#client-left-bottom-img", "#admin-left-bottom-preview", "#admin-left-bottom-link", "#admin-left-bottom-remove", data.leftBottomAdUrl, data.leftBottomLink, "#client-left-container");
+                    
+                    populateAdSlot("#client-right-top", "#client-right-top-img", "#admin-right-top-preview", "#admin-right-top-link", "#admin-right-top-remove", data.rightTopAdUrl, data.rightTopLink, "#client-right-container");
+                    populateAdSlot("#client-right-bottom", "#client-right-bottom-img", "#admin-right-bottom-preview", "#admin-right-bottom-link", "#admin-right-bottom-remove", data.rightBottomAdUrl, data.rightBottomLink, "#client-right-container");
                 }
-            } catch (error) {
-                console.warn("Ads fetch failed:", error);
-            }
+            } catch (error) { console.warn("Ads fetch failed:", error); }
         }
 
         fetchAndDisplayAds();
     </script>
-
-    <div id="imageLightbox" class="image-lightbox" aria-hidden="true">
-        <button type="button" class="image-lightbox-close" aria-label="Close image">&times;</button>
-        <img id="imageLightboxImg" src="" alt="Full screen image">
-    </div>
-
-    <script>
-    (() => {
-        const lightbox = document.getElementById("imageLightbox");
-        const lightboxImg = document.getElementById("imageLightboxImg");
-        const closeBtn = lightbox?.querySelector(".image-lightbox-close");
-
-        function closeImageLightbox() {
-            if (!lightbox) return;
-            lightbox.classList.remove("show");
-            lightbox.setAttribute("aria-hidden", "true");
-            document.body.classList.remove("image-lightbox-open");
-            if (lightboxImg) lightboxImg.src = "";
-        }
-
-        function openImageLightbox(src, alt = "") {
-            if (!lightbox || !lightboxImg || !src) return;
-            lightboxImg.src = src;
-            lightboxImg.alt = alt || "Full screen image";
-            lightbox.classList.add("show");
-            lightbox.setAttribute("aria-hidden", "false");
-            document.body.classList.add("image-lightbox-open");
-        }
-
-        document.addEventListener("click", (event) => {
-            const wrap = event.target.closest(".post-image-wrap");
-            if (wrap) {
-                const img = wrap.querySelector("img");
-                if (img?.src) openImageLightbox(img.currentSrc || img.src, img.alt);
-                return;
-            }
-
-            if (event.target === lightbox || event.target === closeBtn || event.target.closest(".image-lightbox-close")) {
-                closeImageLightbox();
-                return;
-            }
-
-            if (event.target === lightboxImg) {
-                closeImageLightbox();
-            }
-        });
-
-        document.addEventListener("keydown", (event) => {
-            const wrap = event.target.closest?.(".post-image-wrap");
-            if (wrap && (event.key === "Enter" || event.key === " ")) {
-                event.preventDefault();
-                const img = wrap.querySelector("img");
-                if (img?.src) openImageLightbox(img.currentSrc || img.src, img.alt);
-                return;
-            }
-            if (event.key === "Escape" && lightbox?.classList.contains("show")) {
-                closeImageLightbox();
-            }
-        });
-    })();
-    </script>
-
 </body>
 </html>
