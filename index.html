@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FrindFlow</title>
-    <!-- Like / Comment / Share / Favorite UI + Image Zoom + Dual Side Ads + Full Admin -->
+    <!-- Like / Comment / Share / Favorite UI + Image Zoom + Dual Side Ads + Admin Zoom Control -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -14,6 +14,7 @@
             --neon-gold: #ffcf00;
             --text-main: #ffffff;
             --text-muted: #a0a0b0;
+            --ad-zoom: 1; /* Default Ad Zoom Level */
         }
 
         * {
@@ -213,39 +214,48 @@
         .post-editor mark { padding: 0 3px; border-radius: 3px; background: #fff176; color: #111; }
         .post-editor a, .post-content a { color: var(--neon-blue); text-decoration: underline; }
 
-        /* ================= SIDE ADS CSS (Dual Stack Layout) ================= */
+        /* ================= SIDE ADS CSS (300x250 Layout + Admin Zoom Support) ================= */
         .side-ad-container {
             position: fixed;
             top: 90px;
-            width: 160px;
-            height: 600px;
+            width: 300px;
             z-index: 50;
-            display: none; /* Mobile par hide rahega */
-            border-radius: 8px;
-            overflow: hidden;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px dashed rgba(255, 255, 255, 0.1);
-            transition: 0.3s;
+            display: none; 
             flex-direction: column;
-            gap: 2px;
+            gap: 15px; 
         }
-        .side-ad-container:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
         .side-ad-container.left-ad { left: 15px; }
         .side-ad-container.right-ad { right: 15px; }
         
         .side-ad-slot {
-            width: 100%;
-            flex: 1;
+            width: 300px;
+            height: 250px; 
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(0, 0, 0, 0.5); /* Ad box dark background */
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
             overflow: hidden;
             text-decoration: none;
+            transition: 0.3s;
         }
-        .side-ad-slot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .side-ad-slot:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+        
+        /* IMAGE ZOOM CONTROL: object-fit + transform variables */
+        .side-ad-slot img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; /* Cover fills the box smoothly */
+            transform: scale(var(--ad-zoom)); /* Yeh slider se control hoga */
+            display: block; 
+            transition: transform 0.2s ease-in-out;
+        }
 
-        @media (min-width: 1100px) {
+        @media (min-width: 1350px) {
             .side-ad-container.active-ad { display: flex; }
         }
     </style>
@@ -393,8 +403,8 @@
 
                 <!-- Side Ads Admin Manager -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
-                    <h4 style="color:white;margin-bottom:5px;"><i class="fa-solid fa-ad"></i> Side Ads Manager (Up to 4 Ads)</h4>
-                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:15px;">Tip: Leave "Bottom Ad" empty if you want "Top Ad" to fill the full vertical height (160x600).</p>
+                    <h4 style="color:white;margin-bottom:5px;"><i class="fa-solid fa-ad"></i> Side Ads Manager (Up to 4 Ads - 300x250)</h4>
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:15px;">Tip: Upload standard 300x250 medium rectangle ad images here.</p>
                     
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
                         
@@ -404,7 +414,7 @@
                             
                             <!-- Left Top Ad -->
                             <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
-                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot</span>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot (300x250)</span>
                                 <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
                                     <i class="fa-solid fa-upload"></i> Upload Image
                                     <input id="admin-left-top-file" type="file" style="display: none;" accept="image/*">
@@ -417,7 +427,7 @@
 
                             <!-- Left Bottom Ad -->
                             <div>
-                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot</span>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot (300x250)</span>
                                 <label class="btn-neon-blue" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
                                     <i class="fa-solid fa-upload"></i> Upload Image
                                     <input id="admin-left-bottom-file" type="file" style="display: none;" accept="image/*">
@@ -435,7 +445,7 @@
                             
                             <!-- Right Top Ad -->
                             <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed rgba(255,255,255,.1);">
-                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot</span>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Top Ad Slot (300x250)</span>
                                 <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
                                     <i class="fa-solid fa-upload"></i> Upload Image
                                     <input id="admin-right-top-file" type="file" style="display: none;" accept="image/*">
@@ -448,7 +458,7 @@
 
                             <!-- Right Bottom Ad -->
                             <div>
-                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot</span>
+                                <span style="font-size:12px;color:white;display:block;margin-bottom:5px;">Bottom Ad Slot (300x250)</span>
                                 <label class="btn-neon-purple" style="cursor: pointer; display: inline-block; margin-bottom:10px; font-size:12px;">
                                     <i class="fa-solid fa-upload"></i> Upload Image
                                     <input id="admin-right-bottom-file" type="file" style="display: none;" accept="image/*">
@@ -459,7 +469,16 @@
                                 <input id="admin-right-bottom-link" type="text" placeholder="Direct Link (https://...)" style="font-size:13px; width:100%; padding:8px; border-radius:5px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.5); color:white;">
                             </div>
                         </div>
+                    </div>
 
+                    <!-- NEW: GLOBAL AD ZOOM CONTROL -->
+                    <div style="background:rgba(255,255,255,.02);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.05);margin-top:20px;">
+                        <strong style="color:var(--neon-gold);display:block;margin-bottom:10px;font-size:14px;"><i class="fa-solid fa-magnifying-glass"></i> Global Ad Zoom Control</strong>
+                        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Agar ads bohat bade (zoomed-in) lag rahe hain, toh slider ko peechay kar ke unka size chota ya bada karein.</p>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <input id="admin-ad-zoom" type="range" min="30" max="150" step="1" value="100" style="flex:1;min-width:220px;accent-color:var(--neon-gold);">
+                            <strong id="admin-ad-zoom-value" style="min-width:50px;color:var(--neon-gold);">100%</strong>
+                        </div>
                     </div>
                     
                     <button id="admin-save-ads-btn" class="btn-neon-gold" style="margin-top:20px;width:100%;font-size:15px;padding:12px;">
@@ -467,7 +486,7 @@
                     </button>
                 </div>
 
-                <!-- POST MANAGEMENT (RESTORED) -->
+                <!-- POST MANAGEMENT -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;margin-bottom:15px;">
                     <h4 style="color:white;margin-bottom:10px;">Post Management</h4>
                     <div id="admin-post-list" style="display:grid;gap:10px;">
@@ -475,7 +494,7 @@
                     </div>
                 </div>
 
-                <!-- USER MANAGEMENT (RESTORED) -->
+                <!-- USER MANAGEMENT -->
                 <div style="background:rgba(0,0,0,.3);padding:15px;border-radius:10px;">
                     <h4 style="color:white;margin-bottom:10px;">User Management</h4>
                     <div id="admin-user-list" style="display:grid;gap:10px;">
@@ -968,8 +987,18 @@
             showStatus("Admin mode closed.", true);
         });
 
-        // ================= MULTI-ADS MANAGER LOGIC =================
-        let adsData = { leftTopAdUrl: "", leftBottomAdUrl: "", rightTopAdUrl: "", rightBottomAdUrl: "" };
+        // ================= MULTI-ADS MANAGER LOGIC (WITH ZOOM) =================
+        let adsData = { leftTopAdUrl: "", leftBottomAdUrl: "", rightTopAdUrl: "", rightBottomAdUrl: "", adZoom: 100 };
+
+        // Real-time Zoom Slider Sync
+        const adZoomSlider = $("#admin-ad-zoom");
+        if (adZoomSlider) {
+            adZoomSlider.addEventListener("input", (e) => {
+                const val = e.target.value;
+                $("#admin-ad-zoom-value").textContent = val + "%";
+                document.documentElement.style.setProperty("--ad-zoom", val / 100);
+            });
+        }
 
         function setupAdUploader(inputId, previewId, statusId, removeId, dataKey) {
             $(inputId)?.addEventListener("change", async (e) => {
@@ -1015,9 +1044,10 @@
                     rightTopLink: $("#admin-right-top-link").value.trim(),
                     rightBottomAdUrl: adsData.rightBottomAdUrl,
                     rightBottomLink: $("#admin-right-bottom-link").value.trim(),
+                    adZoom: $("#admin-ad-zoom").value, // Saving zoom preference
                     updatedAt: serverTimestamp()
                 }, { merge: true });
-                showStatus("All Ads successfully saved and published!", true);
+                showStatus("All Ads and Zoom settings successfully saved!", true);
                 fetchAndDisplayAds(); 
             } catch (error) { showStatus("Failed to save ads: " + error.message); }
         });
@@ -1050,6 +1080,16 @@
                     adsData.leftBottomAdUrl = data.leftBottomAdUrl || "";
                     adsData.rightTopAdUrl = data.rightTopAdUrl || "";
                     adsData.rightBottomAdUrl = data.rightBottomAdUrl || "";
+
+                    // Load Zoom Setting
+                    if (data.adZoom) {
+                        let zoom = data.adZoom;
+                        document.documentElement.style.setProperty("--ad-zoom", zoom / 100);
+                        if(adZoomSlider) {
+                            adZoomSlider.value = zoom;
+                            $("#admin-ad-zoom-value").textContent = zoom + "%";
+                        }
+                    }
 
                     $("#client-left-container").classList.remove("active-ad");
                     $("#client-right-container").classList.remove("active-ad");
